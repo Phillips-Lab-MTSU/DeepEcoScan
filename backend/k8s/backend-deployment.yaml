@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepecoscan-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepecoscan-backend
+  template:
+    metadata:
+      labels:
+        app: deepecoscan-backend
+    spec:
+      containers:
+      - name: deepecoscan-backend
+        image: hbastian/deepecoscan-backend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_URI
+          value: "mongodb://root:password123@mongodb-service:27017/deepecoscan?authSource=admin"

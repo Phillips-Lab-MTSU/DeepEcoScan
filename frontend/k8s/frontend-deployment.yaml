@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepecoscan-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepecoscan-frontend
+  template:
+    metadata:
+      labels:
+        app: deepecoscan-frontend
+    spec:
+      containers:
+      - name: deepecoscan-frontend
+        image: yourdockerhub/deepecoscan-frontend:latest
+        ports:
+        - containerPort: 80
