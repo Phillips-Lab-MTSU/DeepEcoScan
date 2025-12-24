@@ -3,22 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepEcoScan</title>
+    <title>DeepEcoScan | Environmental Genomic Analysis</title>
     <link rel="stylesheet" href="style.css">
-    <script src = "https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
-    <header class="top-nav">
-        <div class = "button-container">
-            <button class="menu-button">Menu</button>
-            <button class="login-button">Login</button>
-        </div>
-    </header>
     <div id="app">
+        <header class="top-nav">
+            <div class="logo">DeepEcoScan</div>
+            <div class="button-container">
+                <button v-if="!isLoggedIn" class="login-button" @click="isLoggedIn = true">Login / Sign Up</button>
+                <button v-else class="login-button" @click="isLoggedIn = false">Logout</button>
+            </div>
+        </header>
 
-        <div class="container">
-            <h1> DeepEcoScan </h1>
-            <p class="subtitle">Upload FASTA or FASTQ sequence files</p>
+        <div v-if="!isLoggedIn" class="landing-page">
+            <section class="hero">
+                <h1>Welcome to DeepEcoScan</h1>
+                <p class="synopsis">
+                    Welcome to DeepEcoScan....Idk what else to write here yet...
+                </p>
+                <div class="features">
+                    <div class="feature-card">
+                        <h3>place holder on feature</h3>
+                        <p>more here</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>placeholder</h3>
+                        <p>placeholder</p>
+                    </div>
+                </div>
+                <button class="btn-primary" @click="isLoggedIn = true">Get Started</button>
+            </section>
+        </div>
+
+        <div v-else class="container dashboard">
+            <div class="header-content">
+                <h1>Sequence Workspace</h1>
+                <p class="subtitle">Upload FASTA or FASTQ sequence files for analysis</p>
+            </div>
 
             <div class="upload-area" 
                 :class="{ 'dragover': isDragOver }"
@@ -28,38 +51,19 @@
                 @drop.prevent="handleDrop">
                 <div class="upload-icon">📁</div>
                 <p>Drag and drop your file here or click to browse</p>
-                <p class="supported-formats">
-                    Supported formats: .fasta, .fa, .fna, .fastq, .fq
-                </p>
                 <input type="file" ref="fileInput" @change="handleFileSelect" accept=".fasta,.fa,.fna,.fastq,.fq" style="display: none;">
             </div>
 
             <div class="file-info" v-if="selectedFile">
-                <strong>Selected File:</strong><br>
-                Name: {{ selectedFile.name }}<br>
-                Size: {{ (selectedFile.size / (1024 * 1024)).toFixed(2) }} MB<br>
-                Type: {{ selectedFile.type || 'text/plain' }}
+                <strong>Selected:</strong> {{ selectedFile.name }}
             </div>
 
             <button class="btn" @click="uploadFile" :disabled="!selectedFile || isLoading">
-                {{ isLoading ? 'Uploading...' : 'Upload File' }}
+                {{ isLoading ? 'Analyzing...' : 'Begin Scan' }}
             </button>
 
-            <div class="loading" v-if="isLoading">
-                <div class="spinner"></div>
-                <p>Uploading...</p>
-            </div>
-
-            <div class="result" v-if="uploadResult" :class="uploadResult.success ? 'success' : 'error'">
-                <strong>{{uploadResult.message }} </strong>
-                <div v-if="uploadResult.details">
-                    File: {{ uploadResult.details.filename }}<br>
-                    Size: {{ (uploadResult.details.size / 1024).toFixed(2) }} KB
-                </div>
-            </div>
-
-            <div class="file-list"  v-if="uploadedFiles.length > 0">
-                <h3>Uploaded Files:</h3>
+            <div class="file-list" v-if="uploadedFiles.length > 0">
+                <h3>Your Recent Scans</h3>
                 <div class="file-item" v-for="file in uploadedFiles" :key="file">
                     {{ file }}
                 </div>
@@ -68,6 +72,5 @@
     </div>
 
     <script src="app.js"></script>
-      
 </body>
 </html>

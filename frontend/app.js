@@ -3,6 +3,10 @@ const { createApp, ref, onMounted } = Vue;
 createApp({
     setup() {
         const title = ref('DeepEcoScan');
+        
+        // --- NEW: Auth State ---
+        const isLoggedIn = ref(false); 
+
         const selectedFile = ref(null);
         const isLoading = ref(false);
         const uploadResult = ref(null);
@@ -12,7 +16,24 @@ createApp({
 
         const API_URL = 'http://localhost:3000';
 
+        // --- NEW: Auth Methods ---
+        const login = () => {
+            isLoggedIn.value = true;
+            // Fetch files immediately after "logging in"
+            loadFileList();
+        };
+
+        const logout = () => {
+            isLoggedIn.value = false;
+            // Clear sensitive data on logout if necessary
+            selectedFile.value = null;
+            uploadResult.value = null;
+        };
+
         const loadFileList = async () => {
+            // Only fetch if we are logged in
+            if (!isLoggedIn.value) return;
+            
             try {
                 const response = await fetch(`${API_URL}/files`);
                 const data = await response.json();
@@ -70,7 +91,7 @@ createApp({
             } finally {
                 isLoading.value = false;
                 selectedFile.value = null;
-                fileInput.value.value = '';
+                if (fileInput.value) fileInput.value.value = '';
             }
         };
 
@@ -92,11 +113,17 @@ createApp({
         };
 
         onMounted(() => {
-            loadFileList();
+            // If you want it to remember login via localStorage, you'd check that here
+            if (isLoggedIn.value) {
+                loadFileList();
+            }
         });
 
         return {
             title,
+            isLoggedIn, 
+            login,       
+            logout,      
             selectedFile,
             isLoading,
             isDragover,
@@ -112,4 +139,3 @@ createApp({
         };
     },
 }).mount('#app');
-
