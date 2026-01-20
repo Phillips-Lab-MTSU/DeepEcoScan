@@ -6,43 +6,42 @@ createApp({
         const selectedFile = ref(null);
         const isLoading = ref(false);
         const uploadResult = ref(null);
+        const isDragover = ref(false);
         const uploadedFiles = ref([]);
-        const currentUser = ref('');
+        const fileInput = ref(null);
 
-        // Will update when live
-        const API_URL = '/api'; 
+        const API_URL = '';
 
         const loadFileList = async () => {
             try {
                 const response = await fetch(`${API_URL}/files`);
-                
-                // If traefik session is expired or user is not authenticated, trigger the auth flow
-                if (response.status === 401 || response.status === 403) {
-                    window.location.reload(); // Trigger Traefik auth redirect
-                    return;
-                }
-
                 const data = await response.json();
-                uploadedFiles.value = data.files;
-                currentUser.value = data.currentUser;
+                if(data.files){
+                    uploadedFiles.value = data.files;
+                }
             } catch (error) {
-                console.error('Auth or Connection Error:', error);
+                console.error('Error fetching file list:', error);
             }
         };
 
-        
-        const login = () => {
-            window.location.href = '/upload.html'; 
+        const triggerFileInput = () => {
+            fileInput.value.click();
         };
-
         
-        const logout = () => {
-            window.location.href = '/_oauth/logout'; 
+        const handleFileSelect = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile.value = file;
+                uploadResult.value = null;
+            }
         };
 
         const uploadFile = async () => {
             if (!selectedFile.value) return;
+
             isLoading.value = true;
+            uploadResult.value = null;
+
             const formData = new FormData();
             formData.append('sequenceFile', selectedFile.value);
 
@@ -51,23 +50,66 @@ createApp({
                     method: 'POST',
                     body: formData
                 });
+
                 const data = await response.json();
-                uploadResult.value = { success: true, message: data.message };
+                if (!response.ok) {
+                    throw new Error(data.error || 'Upload failed');
+                }
+
+                uploadResult.value = {
+                    success: true,
+                    message: 'Upload successful',
+                    details: data,
+                };
                 await loadFileList();
             } catch (error) {
-                uploadResult.value = { success: false, message: 'Upload failed' };
+                uploadResult.value = {
+                    success: false,
+                    message: error.message || 'Upload failed'
+                };
             } finally {
                 isLoading.value = false;
                 selectedFile.value = null;
+                fileInput.value.value = '';
             }
         };
 
-        onMounted(loadFileList);
+        const handleDragover = () => {
+            isDragover.value = true;
+        };
+
+        const handleDragleave = () => {
+            isDragover.value = false;
+        };
+
+        const handleDrop = (event) => {
+            isDragover.value = false;
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                selectedFile.value = file;
+                uploadResult.value = null;
+            }
+        };
+
+        onMounted(() => {
+            loadFileList();
+        });
 
         return {
-            title, selectedFile, isLoading, uploadResult,
-            uploadedFiles, currentUser, login, logout, uploadFile
-           
+            title,
+            selectedFile,
+            isLoading,
+            isDragover,
+            uploadResult,
+            uploadedFiles,
+            fileInput,
+            triggerFileInput,
+            handleFileSelect,
+            uploadFile,
+            handleDragover,
+            handleDragleave,
+            handleDrop
         };
     },
 }).mount('#app');
+
