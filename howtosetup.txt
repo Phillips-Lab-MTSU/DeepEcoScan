@@ -1,0 +1,15 @@
+1 install docker desktop, kubectl, k3d
+2 create the k3d cluster on an open port
+    ex:
+        k3d cluster create k3s-default \
+         --port "8081:80@loadbalancer" \
+         --port "8444:443@loadbalancer"
+3 make sure traefik and crds exists
+    kubectl get pods -A | grep -i traefik
+    kubectl get crd ingressroutes.traefik.io
+4 build and import the frontend image locally
+    docker build --no-cache -f Dockerfile.frontend -t deepecoscan-frontend:dev .
+    k3d image import deepecoscan-frontend:dev -c k3s-default
+    kubectl apply -f deepecoscan.yaml
+    kubectl rollout restart deployment/deepecoscan-frontend
+5   open localhost.whateverportyouhaveiton/
