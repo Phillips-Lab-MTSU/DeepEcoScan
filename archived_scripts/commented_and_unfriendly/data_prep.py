@@ -27,6 +27,7 @@ def write_json(path: Path, obj: dict) -> None:
 
 
 def default_paths(input_dir: Path) -> dict[str, Path]:
+    # Matches your notebook’s exact filenames.
     return {
         "fasta": input_dir / "P_A_221205_cmfp.trim.contigs.pcr.good.unique.good.filter.unique.precluster.denovo.vsearch.pick.opti_mcc.0.03.pick.0.03.abund.0.03.pick.fasta",
         "otu_list": input_dir / "221205_cmfp.trim.contigs.pcr.good.unique.good.filter.unique.precluster.denovo.vsearch.asv.list",

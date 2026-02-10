@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
+# Use env to locate bash (portable across systems)
+
+# Exit immediately if:
+#  - any command fails (-e)
+#  - any variable is used before being set (-u)
+#  - any command in a pipeline fails (-o pipefail)
+# This makes the script fail fast and prevents silent errors.
 set -euo pipefail
 
 # ---------------------------------------------
 # DeepEcoScan pipeline runner (2-step)
-#   1) data_prep.py
-#   2) embed_setbert.py
+#   1) data_prep.py       -> builds DNADB artifacts
+#   2) embed_setbert.py   -> generates SetBERT embeddings
 #
-# Assumes this .sh file is in the same folder
+# Assumes this .sh file lives in the same directory
 # as data_prep.py and embed_setbert.py
 # ---------------------------------------------
 
+# Print usage/help text and exit
 usage() {
   cat <<'EOF'
 Usage:
@@ -40,7 +48,9 @@ Examples:
 EOF
 }
 
-# Defaults
+# -------------------------
+# Default parameter values
+# -------------------------
 MIN_LENGTH=150
 DEVICE="cuda"
 MODEL_ID="sirdavidludwig/setbert"
@@ -50,10 +60,14 @@ SAMPLE_SIZE=1000
 SEED=0
 FORCE=0
 
+# Required arguments (initialized empty and validated later)
 INPUT_DIR=""
 WORK_DIR=""
 
-# Parse args
+# -------------------------
+# Argument parsing loop
+# -------------------------
+# Walk through all CLI arguments and assign values based on flags
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --input-dir) INPUT_DIR="${2:-}"; shift 2 ;;
@@ -68,30 +82,48 @@ while [[ $# -gt 0 ]]; do
     --seed) SEED="${2:-}"; shift 2 ;;
     --force) FORCE=1; shift 1 ;;
 
+    # Help flag
     -h|--help) usage; exit 0 ;;
+
+    # Catch-all for unknown flags
     *) echo "Unknown argument: $1" >&2; usage; exit 1 ;;
   esac
 done
 
+# Validate required arguments
 if [[ -z "$INPUT_DIR" || -z "$WORK_DIR" ]]; then
   echo "Error: --input-dir and --work-dir are required." >&2
   usage
   exit 1
 fi
 
+# -------------------------
+# Resolve paths and tools
+# -------------------------
+
+# Absolute path to the directory containing this script
+# This allows the script to be run from *any* working directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Python executable to use (can be overridden via env var)
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
+# Output subdirectories
 DNADB_DIR="${WORK_DIR}/dnadb"
 EMBED_DIR="${WORK_DIR}/embeddings"
 
+# Create output directories if they do not already exist
 mkdir -p "$DNADB_DIR" "$EMBED_DIR"
 
+# Build optional --force flag array (bash-safe way to conditionally add flags)
 FORCE_FLAG=()
 if [[ "$FORCE" -eq 1 ]]; then
   FORCE_FLAG=(--force)
 fi
 
+# -------------------------
+# Print run configuration
+# -------------------------
 echo "== Settings =="
 echo "INPUT_DIR:   $INPUT_DIR"
 echo "WORK_DIR:    $WORK_DIR"
@@ -107,6 +139,14 @@ echo "SEED:        $SEED"
 echo "FORCE:       $FORCE"
 echo
 
+# -------------------------
+# Step 1: Data preparation
+# -------------------------
+# Builds:
+#   - sequences.fasta.db
+#   - sequences.mapping.fasta.db
+#   - metadata.csv
+#   - taxonomy.tsv
 echo "== 1) Data Prep =="
 "$PYTHON_BIN" "${SCRIPT_DIR}/data_prep.py" \
   --input-dir "$INPUT_DIR" \
@@ -115,6 +155,12 @@ echo "== 1) Data Prep =="
   "${FORCE_FLAG[@]}"
 
 echo
+
+# -------------------------
+# Step 2: Embedding
+# -------------------------
+# Uses SetBERT to generate one embedding per sample
+# Output is saved as a pickle file
 echo "== 2) Embedding (SetBERT) =="
 "$PYTHON_BIN" "${SCRIPT_DIR}/embed_setbert.py" \
   --dnadb-dir "$DNADB_DIR" \
@@ -126,7 +172,9 @@ echo "== 2) Embedding (SetBERT) =="
   --sample-size "$SAMPLE_SIZE" \
   --seed "$SEED"
 
+# -------------------------
+# Final output locations
+# -------------------------
 echo
-echo "Done."
 echo "DNADB outputs:  $DNADB_DIR"
 echo "Embeddings:     ${EMBED_DIR}/sfd_embeddings.pkl"
