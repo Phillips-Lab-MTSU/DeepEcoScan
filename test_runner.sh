@@ -62,20 +62,16 @@ rsync -av "${SRC_DATA}/" "${INPUT_DIR}/"
 # --------------------------------------------------
 # We use srun so the container runs under Slurm's allocation (GPU/CPU/mem)
 # apptainer exec runs commands inside the container image (.sif)
+# --nv exposes the host GPU drivers/devices inside the container (required for CUDA)
+# Bind host /scratch into the container at the same path so INPUT_DIR/WORK_DIR exist in-container
+# Bind the project directory into the container so the scripts are available at the same path
+# Bind your home directory so any referenced files/configs are accessible (and paths match)
+# The actual container image used for the run (defines Python, PyTorch, SetBERT deps, etc.)
 srun apptainer exec --nv \
-  # --nv exposes the host GPU drivers/devices inside the container (required for CUDA)
   --bind /scratch:/scratch \
-  # Bind host /scratch into the container at the same path so INPUT_DIR/WORK_DIR exist in-container
-
   --bind "${PROJ_DIR}:${PROJ_DIR}" \
-  # Bind the project directory into the container so the scripts are available at the same path
-
   --bind "/home/hb4e:/home/hb4e" \
-  # Bind your home directory so any referenced files/configs are accessible (and paths match)
-
   /home/shared/sif/csci-2025-Fall.sif \
-  # The actual container image used for the run (defines Python, PyTorch, SetBERT deps, etc.)
-
   bash -lc "
     # Start a login shell (-l) and run the following commands (-c)
     # Doing this inside a quoted string keeps the whole command as one container invocation.
