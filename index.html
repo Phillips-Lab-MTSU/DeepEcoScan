@@ -3,71 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepEcoScan</title>
+    <title>DeepEcoScan | Home</title>
     <link rel="stylesheet" href="style.css">
-    <script src = "https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
-    <header class="top-nav">
-        <div class = "button-container">
-            <button class="menu-button">Menu</button>
-            <button class="login-button">Login</button>
-        </div>
-    </header>
     <div id="app">
+        <header class="top-nav">
+            <div class="nav-wrapper">
+                <a href="index.html" class="home-button">
+                    <span>DeepEcoScan</span>
+                </a>
 
-        <div class="container">
-            <h1> DeepEcoScan </h1>
-            <p class="subtitle">Upload FASTA or FASTQ sequence files</p>
+                <div class="nav-right-group">
+                    <div class="menu-container">
+                        <button class="menu-button">Menu ▾</button>
+                        <div class="menu-content">
+                            <a href="index.html">Home</a>
+                            <a v-if="isLoggedIn" href="upload.html">File Loader</a>
+                            <a href="#">About</a>
+                        </div>
+                    </div>
 
-            <div class="upload-area" 
-                :class="{ 'dragover': isDragOver }"
-                @click="triggerFileInput"
-                @dragover.prevent="isDragOver = true"
-                @dragleave="isDragOver = false"
-                @drop.prevent="handleDrop">
-                <div class="upload-icon">📁</div>
-                <p>Drag and drop your file here or click to browse</p>
-                <p class="supported-formats">
-                    Supported formats: .fasta, .fa, .fna, .fastq, .fq
-                </p>
-                <input type="file" ref="fileInput" @change="handleFileSelect" accept=".fasta,.fa,.fna,.fastq,.fq" style="display: none;">
-            </div>
-
-            <div class="file-info" v-if="selectedFile">
-                <strong>Selected File:</strong><br>
-                Name: {{ selectedFile.name }}<br>
-                Size: {{ (selectedFile.size / (1024 * 1024)).toFixed(2) }} MB<br>
-                Type: {{ selectedFile.type || 'text/plain' }}
-            </div>
-
-            <button class="btn" @click="uploadFile" :disabled="!selectedFile || isLoading">
-                {{ isLoading ? 'Uploading...' : 'Upload File' }}
-            </button>
-
-            <div class="loading" v-if="isLoading">
-                <div class="spinner"></div>
-                <p>Uploading...</p>
-            </div>
-
-            <div class="result" v-if="uploadResult" :class="uploadResult.success ? 'success' : 'error'">
-                <strong>{{uploadResult.message }} </strong>
-                <div v-if="uploadResult.details">
-                    File: {{ uploadResult.details.filename }}<br>
-                    Size: {{ (uploadResult.details.size / 1024).toFixed(2) }} KB
+                    <div class="account-container">
+                        <div v-if="isLoggedIn" class="dropdown">
+                            <button class="login-button">My Account ▾</button>
+                            <div class="dropdown-content">
+                                <p class="user-email">researcher@eco-scan.org</p>
+                                <a href="#" @click="logout" class="logout-link">Logout</a>
+                            </div>
+                        </div>
+                        <button v-else class="login-button" @click="login">Login</button>
+                    </div>
                 </div>
             </div>
+        </header>
 
-            <div class="file-list"  v-if="uploadedFiles.length > 0">
-                <h3>Uploaded Files:</h3>
-                <div class="file-item" v-for="file in uploadedFiles" :key="file">
-                    {{ file }}
-                </div>
+        <section class="hero">
+            <h1>DeepEcoScan</h1>
+            <p>Welcome to DeepEcoScan. Please login to access the workspace.</p>
+            <div class="features">
+                <div class="feature-card"><h3>Placeholder</h3><p>Content here.</p></div>
+                <div class="feature-card"><h3>Placeholder</h3><p>Content here.</p></div>
             </div>
-        </div>
+        </section>
     </div>
 
     <script src="app.js"></script>
-      
 </body>
 </html>
