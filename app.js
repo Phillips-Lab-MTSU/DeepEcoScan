@@ -9,14 +9,14 @@ createApp({
         const uploadedFiles = ref([]);
         const currentUser = ref('');
 
-        // 1. Logic Shift: API_URL is relative because we are behind the same Traefik Host
-        const API_URL = '/api'; // Assuming Traefik routes /api to your backend
+        // Will update when live
+        const API_URL = '/api'; 
 
         const loadFileList = async () => {
             try {
                 const response = await fetch(`${API_URL}/files`);
                 
-                // 2. If Traefik session expired, handle the 401/407
+                // If traefik session is expired or user is not authenticated, trigger the auth flow
                 if (response.status === 401 || response.status === 403) {
                     window.location.reload(); // Trigger Traefik auth redirect
                     return;
@@ -30,14 +30,12 @@ createApp({
             }
         };
 
-        // 3. Traefik handles the login wall. The "Login" button just points to 
-        // a protected route that triggers the middleware.
+        
         const login = () => {
             window.location.href = '/upload.html'; 
         };
 
-        // 4. Logout needs to hit the ForwardAuth logout endpoint 
-        // (usually provided by traefik-forward-auth or your OIDC provider)
+        
         const logout = () => {
             window.location.href = '/_oauth/logout'; 
         };
@@ -69,7 +67,7 @@ createApp({
         return {
             title, selectedFile, isLoading, uploadResult,
             uploadedFiles, currentUser, login, logout, uploadFile
-            // ... (other handlers like triggerFileInput remain the same)
+           
         };
     },
 }).mount('#app');

@@ -11,8 +11,8 @@ if (!fs.existsSync(UPLOAD_DIR)){
     fs.mkdirSync(UPLOAD_DIR);
 }
 
-// 1. Identify the user from Traefik headers
-// This header is injected by your Middleware: traefik-forward-auth
+// Identify the user from Traefik headers
+
 const getAuthenticatedUser = (req) => req.headers['x-forwarded-user'] || 'anonymous';
 
 const storage = multer.diskStorage({
@@ -39,7 +39,7 @@ app.get('/files', (req, res) => {
     fs.readdir(UPLOAD_DIR, (err, files) => {
         if (err) return res.status(500).json({ error: 'Read error' });
         
-        // 2. Filter files so users only see their own uploads
+        // Filter files so users only see their own uploads
         const userFiles = files.filter(f => f.startsWith(user));
         res.status(200).json({ files: userFiles, currentUser: user });
     });
