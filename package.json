@@ -1,7 +1,19 @@
 {
+  "name": "deepecoscan",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./backend/server.js",
+  "scripts": {
+    "start": "node ./backend/server.js",
+    "dev": "node ./backend/server.js"
+  },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.996.0",
+    "@aws-sdk/s3-request-presigner": "^3.996.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
     "express": "^5.1.0",
+    "mongoose": "^9.2.1",
     "multer": "^2.0.2"
   }
 }

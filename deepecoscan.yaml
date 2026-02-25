@@ -17,12 +17,12 @@ spec:
         image: hbastian/deepecoscan-backend:latest
         ports:
         - containerPort: 3000
-        volumeMounts:
-        - mountPath: /app/temp_uploads
-          name: upload-storage
-      volumes:
-      - name: upload-storage
-        emptyDir: {}
+        env:
+          - name: PORT
+            value: "3000"
+        envFrom:
+          - secretRef:
+              name: deepecoscan-secrets
 ---
 apiVersion: v1
 kind: Service

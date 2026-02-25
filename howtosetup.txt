@@ -13,3 +13,40 @@
     kubectl apply -f deepecoscan.yaml
     kubectl rollout restart deployment/deepecoscan-frontend
 5   open localhost.whateverportyouhaveiton/
+
+
+kubeseal
+install the sealed secrets controller into the cluser
+kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml
+
+install kubeseal
+(for mac w/ homebrew) 
+brew install kubeseal
+    confirm with 'kubeseal --version'
+
+set up a plaintext secret yaml with kubectl, just fill in the following command with your relevant
+information first and send it in terminal
+
+*** THIS FILE IS NOT TO BE COMMITED, AFTER GENERATING THE SEALED SECRET SCRUB THE YAML FILE ***
+*** Any password that has special characters must be URL-encoded first ***
+
+kubectl create secret generic deepecoscan-secrets \
+  --from-literal=MONGO_URI='mongodb+srv://USER:ENCODED_PASS@CLUSTER/deepecoscan?retryWrites=true&w=majority&appName=DeepEcoScan' \
+  --from-literal=DO_SPACES_ENDPOINT='https://nyc3.digitaloceanspaces.com' \
+  --from-literal=DO_SPACES_BUCKET='deepecoscan-data' \
+  --from-literal=DO_SPACES_KEY='YOUR_KEY' \
+  --from-literal=DO_SPACES_SECRET='YOUR_SECRET' \
+  --from-literal=DO_SPACES_REGION='us-east-1' \
+  --dry-run=client -o yaml > deepecoscan-secrets.yaml
+
+then seal the yaml
+kubeseal --format yaml \
+  --namespace default \
+  --name deepecoscan-secrets \
+  < deepecoscan-secrets.yaml > deepecoscan-sealedsecret.yaml
+
+Apply the sealed secret
+kubectl apply -f deepecoscan-sealedsecret.yaml
+
+finally remove the local unsealed secrets yaml
+rm deepecoscan-secrets.yaml
