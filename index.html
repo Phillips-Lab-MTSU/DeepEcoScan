@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepEcoScan</title>
+    <title>DeepEcoScan | Home</title>
     <link rel="stylesheet" href="style.css">
-    <script src = "https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
 </head>
 <body>
-    <header class="top-nav">
-        <div class = "button-container">
-            <button class="menu-button">Menu</button>
-            <button class="login-button">Login</button>
-        </div>
-    </header>
-    <div id="app">
+    <div id="app" v-cloak>
         <header class="top-nav">
             <div class="nav-wrapper">
                 <a href="index.html" class="home-button">
@@ -36,24 +31,27 @@
                             <button class="login-button">My Account ▾</button>
                             <div class="dropdown-content">
                                 <p class="user-email">{{ currentUser }}</p>
-                                <a href="#" @click="logout" class="logout-link">Logout</a>
+                                <a href="#" @click.prevent="logout" class="logout-link">Logout</a>
                             </div>
                         </div>
                         <button v-else class="login-button" @click="login">Login</button>
                     </div>
                 </div>
             </div>
+        </header>
 
-            <div class="file-list"  v-if="uploadedFiles.length > 0">
-                <h3>Uploaded Files:</h3>
-                <div class="file-item" v-for="file in uploadedFiles" :key="file">
-                    {{ file }}
-                </div>
+        <section class="hero">
+            <h1>DeepEcoScan</h1>
+            <p v-if="!isLoggedIn">Welcome to DeepEcoScan. Please login to access the workspace.</p>
+            <p v-else>Welcome back! You are ready to analyze sequences.</p>
+            
+            <div class="features">
+                <div class="feature-card"><h3>Scalable Analysis</h3><p>Process massive datasets in seconds.</p></div>
+                <div class="feature-card"><h3>Secure Storage</h3><p>Your genomic data is encrypted and private.</p></div>
             </div>
-        </div>
+        </section>
     </div>
 
     <script src="app.js"></script>
-      
 </body>
 </html>
