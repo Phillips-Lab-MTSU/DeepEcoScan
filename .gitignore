@@ -22,3 +22,5 @@ backend/temp_uploads/
 
 # Env files (if ever used)
 *.env
+
+*.fasta

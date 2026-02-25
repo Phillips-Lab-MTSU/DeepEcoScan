@@ -10,7 +10,8 @@ createApp({
         const uploadedFiles = ref([]);
         const fileInput = ref(null);
 
-        const API_URL = 'http://localhost:3000';
+
+        const API_URL = window.location.origin;
 
         const loadFileList = async () => {
             try {
