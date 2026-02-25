@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | DeepEcoScan</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <header class="top-nav">
+            <div class="nav-wrapper">
+                <a href="index.html" class="home-button">
+                    <span>DeepEcoScan</span>
+                </a>
+            </div>
+        </header>
+
+        <section class="login-container">
+            <div class="login-card">
+                <h1>Welcome Back</h1>
+                <p>DeepEcoScan uses <strong>JupyterHub</strong> for secure authentication.</p>
+                
+                <div class="info-box">
+                    <span class="icon">&hearts;</span>
+                    <p>Click below to sign in via the Phillips Lab gateway.</p>
+                </div>
+
+                <button class="login-button primary" @click="startAuth">
+                    Sign in with JupyterHub
+                </button>
+
+                <div class="footer-links">
+                    <a href="index.html">← Back to Home</a>
+                    <a href="about.html">Need Help?</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            methods: {
+                startAuth() {
+                    // Redirecting to a protected path triggers the 
+                    // Traefik Forward Auth middleware flow.
+                    window.location.href = '/index.html';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
