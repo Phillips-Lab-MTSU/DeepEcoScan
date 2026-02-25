@@ -2,42 +2,64 @@ const { createApp, ref, onMounted } = Vue;
 
 createApp({
     setup() {
+        // --- State Refs ---
         const title = ref('DeepEcoScan');
         const selectedFile = ref(null);
         const isLoading = ref(false);
         const uploadResult = ref(null);
         const uploadedFiles = ref([]);
-        const currentUser = ref('');
+        const isDragOver = ref(false);
+        const isLoggedIn = ref(localStorage.getItem('isLoggedIn') === 'true');
+        
+        
+        const currentUser = ref(localStorage.getItem('currentUser') || ''); // Initialize with empty string if not set
+        
+        
+        const fileInput = ref(null);
 
-        // Will update when live
-        const API_URL = '/api'; 
+        const API_URL = '/api';
 
-        const loadFileList = async () => {
-            try {
-                const response = await fetch(`${API_URL}/files`);
-                
-                // If traefik session is expired or user is not authenticated, trigger the auth flow
-                if (response.status === 401 || response.status === 403) {
-                    window.location.reload(); // Trigger Traefik auth redirect
-                    return;
-                }
+        // --- File Handling Methods ---
 
-                const data = await response.json();
-                uploadedFiles.value = data.files;
-                currentUser.value = data.currentUser;
-            } catch (error) {
-                console.error('Auth or Connection Error:', error);
+        const triggerFileInput = () => {
+            if (fileInput.value) {
+                fileInput.value.click();
             }
         };
 
-        
-        const login = () => {
-            window.location.href = '/upload.html'; 
+        const handleFileSelect = (event) => {
+            const files = event.target.files;
+            if (files && files.length > 0) {
+                selectedFile.value = files[0];
+                uploadResult.value = null; 
+            }
         };
 
-        
-        const logout = () => {
-            window.location.href = '/_oauth/logout'; 
+        const handleDrop = (event) => {
+            isDragOver.value = false;
+            const files = event.dataTransfer.files;
+            if (files && files.length > 0) {
+                selectedFile.value = files[0];
+            }
+        };
+
+        // --- API Methods ---
+
+        const loadFileList = async () => {
+            if (!isLoggedIn.value) return; 
+
+            try {
+                const response = await fetch(`${API_URL}/files`);
+                if (response.status === 401 || response.status === 403) {
+                    // Only reload if we actually expected to be logged in
+                    return;
+                }
+                const data = await response.json();
+                uploadedFiles.value = data.files || [];
+                if (data.currentUser) currentUser.value = data.currentUser;
+            } catch (error) {
+                console.error('Connection Error:', error);
+            }
         };
 
         const uploadFile = async () => {
@@ -52,22 +74,54 @@ createApp({
                     body: formData
                 });
                 const data = await response.json();
-                uploadResult.value = { success: true, message: data.message };
+                uploadResult.value = { success: true, message: data.message || 'Upload successful!' };
                 await loadFileList();
             } catch (error) {
-                uploadResult.value = { success: false, message: 'Upload failed' };
+                uploadResult.value = { success: false, message: 'Upload failed. Please try again.' };
             } finally {
                 isLoading.value = false;
                 selectedFile.value = null;
             }
         };
 
-        onMounted(loadFileList);
+        // --- Auth Methods ---
 
+        const login = () => {
+            localStorage.setItem('isLoggedIn', 'true');
+            isLoggedIn.value = true;
+            // Redirect to the loader page after login
+            window.location.href = 'login.html';
+        };
+
+        const logout = () => {
+            localStorage.removeItem('isLoggedIn');
+            isLoggedIn.value = false;
+            window.location.href = 'index.html';
+        };
+
+        onMounted(() => {
+            // Check if we are on a page that has the file list (upload.html)
+            // or just load it anyway, it will exit early if not logged in.
+            loadFileList();
+        });
+
+        // --- Return to Template ---
         return {
-            title, selectedFile, isLoading, uploadResult,
-            uploadedFiles, currentUser, login, logout, uploadFile
-           
+            title, 
+            selectedFile, 
+            isLoading, 
+            uploadResult,
+            uploadedFiles, 
+            currentUser,
+            isDragOver, 
+            isLoggedIn, 
+            login, 
+            logout,
+            fileInput,
+            triggerFileInput, 
+            handleFileSelect, 
+            handleDrop,
+            uploadFile
         };
     },
 }).mount('#app');
