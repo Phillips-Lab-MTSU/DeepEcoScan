@@ -3,17 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepEcoScan</title>
+    <title>DeepEcoScan | Home</title>
     <link rel="stylesheet" href="style.css">
-    <script src = "https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
-    <header class="top-nav">
-        <div class = "button-container">
-            <button class="menu-button">Menu</button>
-            <button class="login-button">Login</button>
-        </div>
-    </header>
     <div id="app">
         <header class="top-nav">
             <div class="nav-wrapper">
@@ -35,7 +29,7 @@
                         <div v-if="isLoggedIn" class="dropdown">
                             <button class="login-button">My Account ▾</button>
                             <div class="dropdown-content">
-                                <p class="user-email">{{ currentUser }}</p>
+                                <p class="user-email">researcher@eco-scan.org</p>
                                 <a href="#" @click="logout" class="logout-link">Logout</a>
                             </div>
                         </div>
@@ -43,17 +37,10 @@
                     </div>
                 </div>
             </div>
-
-            <div class="file-list"  v-if="uploadedFiles.length > 0">
-                <h3>Uploaded Files:</h3>
-                <div class="file-item" v-for="file in uploadedFiles" :key="file">
-                    {{ file }}
-                </div>
-            </div>
-        </div>
+        </header>
     </div>
+    <p class="coming-soon" style="text-align: center;">About page coming soon!</p>
 
     <script src="app.js"></script>
-      
 </body>
 </html>

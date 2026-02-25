@@ -7,19 +7,24 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
+    <style>
+        /* Prevents flickering before Vue loads */
+        [v-cloak] { display: none; }
+        .upload-area.dragover { border: 2px solid #4A90E2; background: #f0f7ff; }
+    </style>
+
     <script>
         if (localStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.href = 'index.html';
+            window.location.href = 'upload.html';
         }
     </script>
 </head>
 <body>
-    <div id="app">
+    <div id="app" v-cloak>
         <header class="top-nav">
             <div class="nav-wrapper">
                 <div class="nav-logo">
-                    <a href="index.html" class="home-button">
-                        <span class="icon">🏠</span> 
+                    <a href="index.html" class="home-button"> 
                         <span class="logo-text">DeepEcoScan</span>
                     </a>
                 </div>
@@ -38,8 +43,8 @@
                         <div v-if="isLoggedIn" class="dropdown">
                             <button class="login-button">My Account ▾</button>
                             <div class="dropdown-content">
-                                <p class="user-email">researcher@eco-scan.org</p>
-                                <a href="#" @click="logout" class="logout-link">Logout</a>
+                                <p class="user-email">{{ currentUser }}</p>
+                                <a href="#" @click.prevent="logout" class="logout-link">Logout</a>
                             </div>
                         </div>
                     </div>
@@ -57,15 +62,24 @@
                 :class="{ 'dragover': isDragOver }"
                 @click="triggerFileInput"
                 @dragover.prevent="isDragOver = true"
-                @dragleave="isDragOver = false"
+                @dragleave.prevent="isDragOver = false"
                 @drop.prevent="handleDrop">
+                
                 <div class="upload-icon">📁</div>
-                <p>Drag and drop your file here or click to browse</p>
-                <input type="file" ref="fileInput" @change="handleFileSelect" accept=".fasta,.fa,.fna,.fastq,.fq" style="display: none;">
+                <p v-if="!selectedFile">Drag and drop your file here or <strong>click to browse</strong></p>
+                <p v-else>Selected: <strong>{{ selectedFile.name }}</strong></p>
+
+                <input 
+                    type="file" 
+                    ref="fileInput" 
+                    @change="handleFileSelect" 
+                    accept=".fasta,.fa,.fna,.fastq,.fq" 
+                    style="display: none;"
+                >
             </div>
 
-            <div class="file-info" v-if="selectedFile">
-                <strong>Selected:</strong> {{ selectedFile.name }}
+            <div v-if="uploadResult" :class="['message', uploadResult.success ? 'success' : 'error']" style="margin: 10px 0; padding: 10px; border-radius: 4px; text-align: center;">
+                {{ uploadResult.message }}
             </div>
 
             <button class="btn-scan" @click="uploadFile" :disabled="!selectedFile || isLoading">
