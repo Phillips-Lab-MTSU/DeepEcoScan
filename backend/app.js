@@ -17,7 +17,7 @@ createApp({
         
         const fileInput = ref(null);
 
-        const API_URL = '/api';
+        const API_URL = '';
 
         // --- File Handling Methods ---
 

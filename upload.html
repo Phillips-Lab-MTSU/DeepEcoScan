@@ -1,100 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Loader | DeepEcoScan</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
+    <link rel="stylesheet" href="style.css" />
+    <script src="vue.global.js"></script>
+
     <style>
-        /* Prevents flickering before Vue loads */
-        [v-cloak] { display: none; }
-        .upload-area.dragover { border: 2px solid #4A90E2; background: #f0f7ff; }
+      /* Prevents flickering before Vue loads */
+      [v-cloak] {
+        display: none;
+      }
+      .upload-area.dragover {
+        border: 2px solid #4a90e2;
+        background: #f0f7ff;
+      }
     </style>
 
     <script>
-        if (localStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.href = 'upload.html';
-        }
+      if (localStorage.getItem("isLoggedIn") !== "true") {
+        window.location.href = "index.html"; // was upload.html
+      }
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="app" v-cloak>
-        <header class="top-nav">
-            <div class="nav-wrapper">
-                <div class="nav-logo">
-                    <a href="index.html" class="home-button"> 
-                        <span class="logo-text">DeepEcoScan</span>
-                    </a>
+      <header class="top-nav">
+        <div class="nav-wrapper">
+          <div class="nav-logo">
+            <a href="index.html" class="home-button">
+              <span class="logo-text">DeepEcoScan</span>
+            </a>
+          </div>
+
+          <div class="nav-right-group">
+            <div class="menu-container">
+              <button class="menu-button">Menu ▾</button>
+              <div class="menu-content">
+                <a href="index.html">Home</a>
+                <a href="upload.html">File Loader</a>
+                <a href="#">About EcoScan</a>
+              </div>
+            </div>
+
+            <div class="account-container">
+              <div v-if="isLoggedIn" class="dropdown">
+                <button class="login-button">My Account ▾</button>
+                <div class="dropdown-content">
+                  <p class="user-email">{{ currentUser }}</p>
+                  <a href="#" @click.prevent="logout" class="logout-link"
+                    >Logout</a
+                  >
                 </div>
-
-                <div class="nav-right-group">
-                    <div class="menu-container">
-                        <button class="menu-button">Menu ▾</button>
-                        <div class="menu-content">
-                            <a href="index.html">Home</a>
-                            <a href="upload.html">File Loader</a>
-                            <a href="#">About EcoScan</a>
-                        </div>
-                    </div>
-
-                    <div class="account-container">
-                        <div v-if="isLoggedIn" class="dropdown">
-                            <button class="login-button">My Account ▾</button>
-                            <div class="dropdown-content">
-                                <p class="user-email">{{ currentUser }}</p>
-                                <a href="#" @click.prevent="logout" class="logout-link">Logout</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+              </div>
             </div>
-        </header>
-
-        <div class="container dashboard">
-            <div class="header-content">
-                <h1>Sequence Workspace</h1>
-                <p class="subtitle">Upload FASTA or FASTQ sequence files for analysis</p>
-            </div>
-
-            <div class="upload-area" 
-                :class="{ 'dragover': isDragOver }"
-                @click="triggerFileInput"
-                @dragover.prevent="isDragOver = true"
-                @dragleave.prevent="isDragOver = false"
-                @drop.prevent="handleDrop">
-                
-                <div class="upload-icon">📁</div>
-                <p v-if="!selectedFile">Drag and drop your file here or <strong>click to browse</strong></p>
-                <p v-else>Selected: <strong>{{ selectedFile.name }}</strong></p>
-
-                <input 
-                    type="file" 
-                    ref="fileInput" 
-                    @change="handleFileSelect" 
-                    accept=".fasta,.fa,.fna,.fastq,.fq" 
-                    style="display: none;"
-                >
-            </div>
-
-            <div v-if="uploadResult" :class="['message', uploadResult.success ? 'success' : 'error']" style="margin: 10px 0; padding: 10px; border-radius: 4px; text-align: center;">
-                {{ uploadResult.message }}
-            </div>
-
-            <button class="btn-scan" @click="uploadFile" :disabled="!selectedFile || isLoading">
-                {{ isLoading ? 'Analyzing...' : 'Begin Scan' }}
-            </button>
-
-            <div class="file-list" v-if="uploadedFiles.length > 0">
-                <h3>Your Recent Scans</h3>
-                <div class="file-item" v-for="file in uploadedFiles" :key="file">
-                    {{ file }}
-                </div>
-            </div>
+          </div>
         </div>
+      </header>
+
+      <div class="container dashboard">
+        <div class="header-content">
+          <h1>Sequence Workspace</h1>
+          <p class="subtitle">
+            Upload FASTA or FASTQ sequence files for analysis
+          </p>
+        </div>
+
+        <div
+          class="upload-area"
+          :class="{ 'dragover': isDragOver }"
+          @click="triggerFileInput"
+          @dragover.prevent="isDragOver = true"
+          @dragleave.prevent="isDragOver = false"
+          @drop.prevent="handleDrop"
+        >
+          <div class="upload-icon">📁</div>
+          <p v-if="!selectedFile">
+            Drag and drop your file here or <strong>click to browse</strong>
+          </p>
+          <p v-else>Selected: <strong>{{ selectedFile.name }}</strong></p>
+
+          <input
+            type="file"
+            ref="fileInput"
+            @change="handleFileSelect"
+            accept=".fasta,.fa,.fna,.fastq,.fq"
+            style="display: none"
+          />
+        </div>
+
+        <div
+          v-if="uploadResult"
+          :class="['message', uploadResult.success ? 'success' : 'error']"
+          style="
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+          "
+        >
+          {{ uploadResult.message }}
+        </div>
+
+        <button
+          class="btn-scan"
+          @click="uploadFile"
+          :disabled="!selectedFile || isLoading"
+        >
+          {{ isLoading ? 'Analyzing...' : 'Begin Scan' }}
+        </button>
+
+        <div class="file-list" v-if="uploadedFiles.length > 0">
+          <h3>Your Recent Scans</h3>
+          <div class="file-item" v-for="file in uploadedFiles" :key="file">
+            {{ file }}
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="app.js"></script>
-</body>
+  </body>
 </html>
