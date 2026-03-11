@@ -40,8 +40,8 @@ const s3 = new S3Client({
   endpoint: DO_SPACES_ENDPOINT,
   forcePathStyle: false,
   credentials: {
-    accessKeyId: DO_SPACES_KEY,
-    secretAccessKey: DO_SPACES_SECRET,
+  accessKeyId: DO_SPACES_KEY,
+  secretAccessKey: DO_SPACES_SECRET,
   },
 });
 
@@ -79,7 +79,7 @@ const upload = multer({
 =========================== */
 
 // Upload file -> Spaces blob, Mongo mapping
-app.post("/upload", upload.single("sequenceFile"), async (req, res) => {
+app.post("/api/upload", upload.single("sequenceFile"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded or invalid file type." });
@@ -129,7 +129,7 @@ app.post("/upload", upload.single("sequenceFile"), async (req, res) => {
 });
 
 // List files (Mongo mapping only)
-app.get("/files", async (req, res) => {
+app.get("/api/files", async (req, res) => {
   try {
     const files = await FileRecord.find({})
       .sort({ createdAt: -1 })
@@ -143,7 +143,7 @@ app.get("/files", async (req, res) => {
 });
 
 // Download (returns a presigned URL to Spaces)
-app.get("/files/:id/download", async (req, res) => {
+app.get("/api/files/:id/download", async (req, res) => {
   try {
     const doc = await FileRecord.findById(req.params.id).select("blob originalFilename");
     if (!doc) return res.status(404).json({ error: "File not found" });
@@ -178,7 +178,7 @@ app.get("/files/:id/download", async (req, res) => {
 connectDB()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log("Server running on http://localhost:${PORT}");
     });
   })
   .catch((err) => {

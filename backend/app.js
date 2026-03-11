@@ -17,7 +17,7 @@ createApp({
         
         const fileInput = ref(null);
 
-        const API_URL = '/api';
+        const API_URL = 'http://localhost:3000/api';
 
         // --- File Handling Methods ---
 
