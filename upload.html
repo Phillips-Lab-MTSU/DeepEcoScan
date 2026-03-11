@@ -35,7 +35,8 @@
                         <div class="menu-content">
                             <a href="index.html">Home</a>
                             <a href="upload.html">File Loader</a>
-                            <a href="#">About EcoScan</a>
+                            <a href="about.html">About</a>
+                            <a v-if="isLoggedIn" href="projects.html">Projects</a>
                         </div>
                     </div>
 
@@ -95,6 +96,6 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="/backend/app.js"></script>
 </body>
 </html>
