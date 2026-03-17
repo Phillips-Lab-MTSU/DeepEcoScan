@@ -15,7 +15,7 @@
 
     <script>
         if (localStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.href = 'upload.html';
+            window.location.href = 'file_upload.html';
         }
     </script>
 </head>
@@ -34,9 +34,9 @@
                         <button class="menu-button">Menu ▾</button>
                         <div class="menu-content">
                             <a href="index.html">Home</a>
-                            <a href="upload.html">File Loader</a>
+                            <a href="file_upload.html">File Loader</a>
                             <a href="about.html">About</a>
-                            <a v-if="isLoggedIn" href="projects.html">Projects</a>
+                            <a v-if="isLoggedIn" href="projects.html">My Projects</a>
                         </div>
                     </div>
 
@@ -58,6 +58,30 @@
                 <h1>Sequence Workspace</h1>
                 <p class="subtitle">Upload FASTA or FASTQ sequence files for analysis</p>
             </div>
+            <div class="project-management">
+                <div class="project-selector">
+                    <label for="projectSelect">Project Context:</label>
+                    <select id="projectSelect" v-model="selectedProjectId" @change="handleProjectChange">
+                        <option value="new">+ Create New Project</option>
+                        <option v-for="project in projects" :key="project.id" :value="project.id">
+                            {{ project.name }} (ID: {{ project.id }})
+                        </option>
+                    </select>
+                </div>
+
+                <div v-if="selectedProjectId === 'new'" class="new-project-input">
+                    <input 
+                        type="text" 
+                        v-model="newProjectName" 
+                        placeholder="Enter New Project Name..."
+                        class="project-input-field"
+                    >
+                </div>
+        </div>
+
+
+
+
 
             <div class="upload-area" 
                 :class="{ 'dragover': isDragOver }"

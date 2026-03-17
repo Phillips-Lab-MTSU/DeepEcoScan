@@ -17,9 +17,28 @@ createApp({
         
         const fileInput = ref(null);
 
+        const projects = ref([]); // New state for projects
+        const selectedProjectId = ref(null); // State for selected project
+        const newProjectName = ref(''); // State for new project name
+
         const API_URL = 'http://localhost:3000/api';
 
-        // --- File Handling Methods ---
+        // --- File/Project Handling Methods ---
+
+        const fetchProjects = async () => {
+            if (!isLoggedIn.value) return;
+
+            try {
+                const response = await fetch(`${API_URL}/projects`);
+                if (response.status === 401 || response.status === 403) {
+                    return;
+                }
+                const data = await response.json();
+                projects.value = data.projects || [];
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+            }
+        };
 
         const triggerFileInput = () => {
             if (fileInput.value) {
@@ -64,9 +83,22 @@ createApp({
 
         const uploadFile = async () => {
             if (!selectedFile.value) return;
+            
+            // Validation: If "new" is selected, require a name
+            if (selectedProjectId.value === 'new' && !newProjectName.value.trim()) {
+                uploadResult.value = { success: false, message: 'Please enter a name for the new project.' };
+                return;
+            }
+
             isLoading.value = true;
             const formData = new FormData();
             formData.append('sequenceFile', selectedFile.value);
+            
+            // Send project info to backend
+            formData.append('projectId', selectedProjectId.value);
+            if (selectedProjectId.value === 'new') {
+                formData.append('projectName', newProjectName.value);
+            }
 
             try {
                 const response = await fetch(`${API_URL}/upload`, {
@@ -74,15 +106,20 @@ createApp({
                     body: formData
                 });
                 const data = await response.json();
+                
                 uploadResult.value = { success: true, message: data.message || 'Upload successful!' };
-                await loadFileList();
+                
+                // Reset fields and refresh data
+                newProjectName.value = '';
+                selectedFile.value = null;
+                await Promise.all([loadFileList(), fetchProjects()]);
             } catch (error) {
                 uploadResult.value = { success: false, message: 'Upload failed. Please try again.' };
             } finally {
                 isLoading.value = false;
-                selectedFile.value = null;
             }
         };
+        
 
         // --- Auth Methods ---
 
@@ -121,7 +158,10 @@ createApp({
             triggerFileInput, 
             handleFileSelect, 
             handleDrop,
-            uploadFile
+            uploadFile,
+            projects,
+            selectedProjectId,
+            newProjectName
         };
     },
 }).mount('#app');
