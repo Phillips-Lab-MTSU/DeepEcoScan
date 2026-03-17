@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: deepecoscan-backend
-          image: hbastian/deepecoscan-backend:latest
+          image: deepecoscan-backend:dev
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
@@ -51,7 +52,7 @@ spec:
         app: deepecoscan-frontend
     spec:
       containers:
-        - name: frontend
+        - name: deepecoscan-frontend
           image: deepecoscan-frontend:dev
           imagePullPolicy: IfNotPresent
           ports:
@@ -77,7 +78,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`deepeco.local`) && PathPrefix(`/upload`)
+    - match: Host(`deepeco.local`) && PathPrefix(`/uploader`)
       kind: Rule
       services:
         - name: deepecoscan-backend-service
