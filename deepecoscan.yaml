@@ -78,7 +78,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`deepeco.local`) && PathPrefix(`/uploader`)
+    - match: Host(`deepeco.local`) && PathPrefix(`/upload`)
       kind: Rule
       services:
         - name: deepecoscan-backend-service

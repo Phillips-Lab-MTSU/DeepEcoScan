@@ -17,7 +17,7 @@ createApp({
         
         const fileInput = ref(null);
 
-        const API_URL = '';
+        const API_URL = 'http://deepeco.local:8081';
 
         // --- File Handling Methods ---
 
@@ -64,23 +64,40 @@ createApp({
 
         const uploadFile = async () => {
             if (!selectedFile.value) return;
+        
             isLoading.value = true;
+            uploadResult.value = null;
+        
             const formData = new FormData();
             formData.append('sequenceFile', selectedFile.value);
-
+        
             try {
                 const response = await fetch(`${API_URL}/upload`, {
                     method: 'POST',
                     body: formData
                 });
+        
                 const data = await response.json();
-                uploadResult.value = { success: true, message: data.message || 'Upload successful!' };
+        
+                if (!response.ok) {
+                    throw new Error(data.error || 'Upload failed');
+                }
+        
+                uploadResult.value = {
+                    success: true,
+                    message: data.message || 'Upload successful!'
+                };
+        
                 await loadFileList();
             } catch (error) {
-                uploadResult.value = { success: false, message: 'Upload failed. Please try again.' };
+                uploadResult.value = {
+                    success: false,
+                    message: error.message || 'Upload failed. Please try again.'
+                };
             } finally {
                 isLoading.value = false;
                 selectedFile.value = null;
+                if (fileInput.value) fileInput.value.value = '';
             }
         };
 

@@ -39,7 +39,7 @@
               <button class="menu-button">Menu ▾</button>
               <div class="menu-content">
                 <a href="index.html">Home</a>
-                <a href="upload.html">File Loader</a>
+                <a href="file_upload.html">File Loader</a>
                 <a href="#">About EcoScan</a>
               </div>
             </div>
@@ -113,8 +113,12 @@
 
         <div class="file-list" v-if="uploadedFiles.length > 0">
           <h3>Your Recent Scans</h3>
-          <div class="file-item" v-for="file in uploadedFiles" :key="file">
-            {{ file }}
+          <div class="file-item" v-for="file in uploadedFiles" :key="file._id">
+            <div><strong>{{ file.name }}</strong></div>
+            <div>Type: {{ file.type }}</div>
+            <div>Size: {{ file.sizeBytes }} bytes</div>
+            <div>Status: {{ file.scan?.status || 'uploaded' }}</div>
+            <div v-if="file.scan">Sequences: {{ file.scan.sequenceCount || 0 }}</div>
           </div>
         </div>
       </div>
