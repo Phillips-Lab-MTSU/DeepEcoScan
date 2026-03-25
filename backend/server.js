@@ -90,22 +90,38 @@ app.post("/api/upload", upload.single("sequenceFile"), async (req, res) => {
 
     const objectKey = makeObjectKey(req.file.originalname);
 
-    // Upload bytes to DigitalOcean Spaces
+    // Upload raw bytes to DigitalOcean Spaces
     await s3.send(
       new PutObjectCommand({
         Bucket: DO_SPACES_BUCKET,
         Key: objectKey,
         Body: req.file.buffer,
-        // ContentType is optional; most FASTA/FASTQ are text
         ContentType: "text/plain",
       })
     );
 
-    // Write mapping doc to MongoDB
+    // Basic FASTA parsing
+    let sequenceCount = 0;
+    let sampleHeaders = [];
+
+    if (["fasta", "fa"].includes(type)) {
+      const text = req.file.buffer.toString("utf8");
+      const lines = text.split(/\r?\n/);
+
+      for (const line of lines) {
+        if (line.startsWith(">")) {
+          sequenceCount++;
+          if (sampleHeaders.length < 5) {
+            sampleHeaders.push(line.substring(1).trim());
+          }
+        }
+      }
+    }
+
     const doc = await FileRecord.create({
       name: req.file.originalname,
       originalFilename: req.file.originalname,
-      storedFilename: objectKey, // keep field, but now it's the objectKey
+      storedFilename: objectKey,
       type,
       blob: {
         kind: "s3",
@@ -113,14 +129,16 @@ app.post("/api/upload", upload.single("sequenceFile"), async (req, res) => {
         key: objectKey,
       },
       sizeBytes: req.file.size,
+      scan: {
+        status: "uploaded",
+        sequenceCount,
+        sampleHeaders,
+      },
     });
 
     return res.status(200).json({
       message: "File uploaded successfully",
-      fileId: doc._id,
-      bucket: DO_SPACES_BUCKET,
-      key: objectKey,
-      sizeBytes: req.file.size,
+      file: doc,
     });
   } catch (err) {
     console.error("Upload error:", err);

@@ -26,7 +26,6 @@ const ScanSchema = new mongoose.Schema(
   { _id: false }
 );
 
-
 const FileSchema = new mongoose.Schema(
   {
     projectId: { type: mongoose.Schema.Types.ObjectId, index: true }, // later
@@ -48,7 +47,7 @@ const FileSchema = new mongoose.Schema(
     blob: { type: BlobSchema, required: true },
 
     sizeBytes: { type: Number, required: true },
-    scan: { type: ScanSchema, default: null },
+    scan: { type: ScanSchema, default: () => ({}) },
   },
   { collection: "files", timestamps: true }
 );

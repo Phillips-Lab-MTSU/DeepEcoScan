@@ -15,6 +15,19 @@
 5   open localhost.whateverportyouhaveiton/
 
 
+***
+docker build --no-cache -f Dockerfile.frontend -t deepecoscan-frontend:dev .
+docker build --no-cache -f Dockerfile.backend -t deepecoscan-backend:dev .
+
+k3d image import deepecoscan-frontend:dev -c deepeco
+k3d image import deepecoscan-backend:dev -c deepeco
+
+kubectl apply -f deepecoscan.yaml
+kubectl rollout restart deployment/deepecoscan-frontend
+kubectl rollout restart deployment/deepecoscan-backend
+kubectl get pods
+***
+
 kubeseal
 install the sealed secrets controller into the cluser
 kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml

@@ -1,0 +1,101 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-forward-auth
+spec:
+  forwardAuth:
+    # Service is created in default namespace below
+    address: http://traefik-forward-auth.default.svc.cluster.local:4181
+    authResponseHeaders:
+      - X-Forwarded-User
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-header
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-User: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik-forward-auth
+  labels:
+    app: traefik-forward-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik-forward-auth
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: traefik-forward-auth
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - image: jlphillips/traefik-forward-auth:phillips-lab
+          name: traefik-forward-auth
+          ports:
+            - containerPort: 4181
+              protocol: TCP
+          env:
+            - name: LOG_LEVEL
+              value: debug
+            - name: INSECURE_COOKIE
+              value: "false"
+            - name: SECRET
+              value: "a-random-32-hex-character-string-should-go-here"
+            - name: DEFAULT_PROVIDER
+              value: "generic-oauth"
+            - name: PROVIDERS_GENERIC_OAUTH_SCOPE
+              value: "identify"
+            - name: PROVIDERS_GENERIC_OAUTH_AUTH_URL
+              value: "https://jupyterhub.cs.mtsu.edu/phillips-lab/hub/api/oauth2/authorize"
+            - name: PROVIDERS_GENERIC_OAUTH_TOKEN_URL
+              value: "https://jupyterhub.cs.mtsu.edu/phillips-lab/hub/api/oauth2/token"
+            - name: PROVIDERS_GENERIC_OAUTH_USER_URL
+              value: "https://jupyterhub.cs.mtsu.edu/phillips-lab/hub/api/user"
+            - name: PROVIDERS_GENERIC_OAUTH_CLIENT_ID
+              value: "service-open-webui-oauth2"
+            - name: PROVIDERS_GENERIC_OAUTH_CLIENT_SECRET
+              value: "a-32-hex-character-client-secret-goes-here-must-match-jupyterhub"
+            - name: URL_PATH
+              value: "/_oauth"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-forward-auth
+  labels:
+    app: traefik-forward-auth
+spec:
+  type: ClusterIP
+  selector:
+    app: traefik-forward-auth
+  ports:
+    - name: auth-http
+      port: 4181
+      targetPort: 4181
+---
+# Example IngressRoute showing how to attach the middleware.
+# This does NOT affect deepeco.local unless you change Host() and apply it.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: app-ingress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`example.org`)
+      kind: Rule
+      services:
+        - name: service-name
+          port: 80
+      middlewares:
+        - name: traefik-forward-auth
