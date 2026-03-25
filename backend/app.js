@@ -21,7 +21,7 @@ createApp({
         const selectedProjectId = ref(null); // State for selected project
         const newProjectName = ref(''); // State for new project name
 
-        const API_URL = 'http://localhost:3000/api';
+        const API_URL = 'http://deepeco.local:8081';
 
         // --- File/Project Handling Methods ---
 
@@ -83,14 +83,16 @@ createApp({
 
         const uploadFile = async () => {
             if (!selectedFile.value) return;
-            
+
+            isLoading.value = true;
+            uploadResult.value = null; // Clear previous result
+
             // Validation: If "new" is selected, require a name
             if (selectedProjectId.value === 'new' && !newProjectName.value.trim()) {
                 uploadResult.value = { success: false, message: 'Please enter a name for the new project.' };
                 return;
             }
 
-            isLoading.value = true;
             const formData = new FormData();
             formData.append('sequenceFile', selectedFile.value);
             
@@ -106,18 +108,24 @@ createApp({
                     body: formData
                 });
                 const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Upload failed');
+                }
                 
                 uploadResult.value = { success: true, message: data.message || 'Upload successful!' };
-                
-                // Reset fields and refresh data
-                newProjectName.value = '';
-                selectedFile.value = null;
-                await Promise.all([loadFileList(), fetchProjects()]);
+
+                await loadFileList(); // Refresh file list after upload
             } catch (error) {
-                uploadResult.value = { success: false, message: 'Upload failed. Please try again.' };
+                uploadResult.value = { success: false, message: error.message || 'Upload failed. Please try again.' };
             } finally {
                 isLoading.value = false;
+                selectedFile.value = null; // Clear selected file after upload attempt
+                if (fileInput.value) {
+                    fileInput.value.value = ''; // Reset file input
+                }
             }
+                
         };
         
 

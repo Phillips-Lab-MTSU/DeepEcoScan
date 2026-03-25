@@ -12,6 +12,21 @@ const BlobSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const ScanSchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: ["uploaded", "processing", "complete", "failed"],
+      default: "uploaded",
+    },
+    sequenceCount: { type: Number, default: 0 },
+    sampleHeaders: [{ type: String }],
+    errorMessage: { type: String, default: null },
+  },
+  { _id: false }
+);
+
+
 const FileSchema = new mongoose.Schema(
   {
     projectId: { type: mongoose.Schema.Types.ObjectId, index: true }, // later
@@ -33,6 +48,7 @@ const FileSchema = new mongoose.Schema(
     blob: { type: BlobSchema, required: true },
 
     sizeBytes: { type: Number, required: true },
+    scan: { type: ScanSchema, default: null },
   },
   { collection: "files", timestamps: true }
 );

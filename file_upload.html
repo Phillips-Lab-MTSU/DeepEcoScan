@@ -15,7 +15,7 @@
 
     <script>
         if (localStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.href = 'file_upload.html';
+            window.location.href = 'index.html';
         }
     </script>
 </head>
@@ -114,7 +114,11 @@
             <div class="file-list" v-if="uploadedFiles.length > 0">
                 <h3>Your Recent Scans</h3>
                 <div class="file-item" v-for="file in uploadedFiles" :key="file">
-                    {{ file }}
+                    <div><strong>{{ file.name }}</strong></div>
+                    <div>Type: {{ file.type }}</div>
+                    <div>Size: {{ file.sizeBytes }} bytes</div>
+                    <div>Status: {{ file.scan?.status || 'uploaded' }}</div>
+                    <div v-if="file.scan">Sequences: {{ file.scan.sequenceCount || 0 }}</div>
                 </div>
             </div>
         </div>
