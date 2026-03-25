@@ -196,7 +196,7 @@ app.get("/api/files/:id/download", async (req, res) => {
 connectDB()
   .then(() => {
     app.listen(PORT, () => {
-      console.log("Server running on http://localhost:${PORT}");
+      console.log(`Server running on http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
