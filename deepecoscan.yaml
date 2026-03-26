@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: deepecoscan-backend
-          image: deepecoscan-backend:dev
+          image: hbastian/deepecoscan-backend:dev
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000

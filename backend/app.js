@@ -21,6 +21,7 @@ createApp({
         const selectedProjectId = ref(null); // State for selected project
         const newProjectName = ref(''); // State for new project name
 
+
         const API_URL = 'http://deepeco.local:8081';
 
         // --- File/Project Handling Methods ---
