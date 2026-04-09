@@ -259,3 +259,29 @@ body {
 .login-button.primary:hover {
     background-color: #357ABD;
 }
+.project-management {
+    background: var(--white);
+    border: 1px solid #e2e8f0;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.project-section {
+    margin-bottom: 15px;
+    
+}
+.project-section, #projectSelect {
+    margin-left: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: black;
+}
+.input-project-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 15px;
+}
