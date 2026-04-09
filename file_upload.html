@@ -36,7 +36,7 @@
                             <a href="index.html">Home</a>
                             <a href="file_upload.html">File Loader</a>
                             <a href="about.html">About</a>
-                            <a v-if="isLoggedIn" href="projects.html">My Projects</a>
+                            <a v-if="isLoggedIn" href="my_projects.html">My Projects</a>
                         </div>
                     </div>
 
@@ -60,22 +60,30 @@
             </div>
             <div class="project-management">
                 <div class="project-selector">
-                    <label for="projectSelect">Project Context:</label>
+                    <label for="projectSelect">Project:</label>
                     <select id="projectSelect" v-model="selectedProjectId" @change="handleProjectChange">
-                        <option value="new">+ Create New Project</option>
+                        <option value="new">Create New Project</option>
                         <option v-for="project in projects" :key="project.id" :value="project.id">
-                            {{ project.name }} (ID: {{ project.id }})
+                            {{ project.name }} 
                         </option>
                     </select>
                 </div>
 
                 <div v-if="selectedProjectId === 'new'" class="new-project-input">
+                    <label class = "input-project-label">New Project Name:</label>
                     <input 
                         type="text" 
                         v-model="newProjectName" 
                         placeholder="Enter New Project Name..."
                         class="project-input-field"
+                        @keyup.enter="createProject"
                     >
+                    <button 
+                        class="btnSaveProject"
+                        @click="createProject" :disabled="!newProjectName.trim() || isLoading"
+                    >
+                        {{ isLoading ? 'Saving...' : 'Save Project' }}
+                    </button>
                 </div>
         </div>
 

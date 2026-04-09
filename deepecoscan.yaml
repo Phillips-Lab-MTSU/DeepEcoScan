@@ -53,8 +53,8 @@ spec:
     spec:
       containers:
         - name: deepecoscan-frontend
-          image: deepecoscan-frontend:dev
-          imagePullPolicy: IfNotPresent
+          image: hbastian/deepecoscan-frontend:dev
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
 ---

@@ -2,7 +2,7 @@ const { createApp, ref, onMounted } = Vue;
 
 createApp({
     setup() {
-        // --- State Refs ---
+        // --- State ---
         const title = ref('DeepEcoScan');
         const selectedFile = ref(null);
         const isLoading = ref(false);
@@ -10,30 +10,26 @@ createApp({
         const uploadedFiles = ref([]);
         const isDragOver = ref(false);
         const isLoggedIn = ref(localStorage.getItem('isLoggedIn') === 'true');
-        
-        
-        const currentUser = ref(localStorage.getItem('currentUser') || ''); // Initialize with empty string if not set
-        
-        
+        const currentUser = ref(localStorage.getItem('currentUser') || '');
         const fileInput = ref(null);
 
-        const projects = ref([]); // New state for projects
-        const selectedProjectId = ref(null); // State for selected project
-        const newProjectName = ref(''); // State for new project name
+        // --- Project State ---
+        const projects = ref([]); 
+        const selectedProjectId = ref(null); 
+        const newProjectName = ref(''); 
 
 
         const API_URL = 'http://deepeco.local:8081';
 
-        // --- File/Project Handling Methods ---
+        // --- Project Methods ---
 
         const fetchProjects = async () => {
             if (!isLoggedIn.value) return;
 
             try {
                 const response = await fetch(`${API_URL}/projects`);
-                if (response.status === 401 || response.status === 403) {
-                    return;
-                }
+                if (response.status === 401 || response.status === 403) return;
+                
                 const data = await response.json();
                 projects.value = data.projects || [];
             } catch (error) {
@@ -41,10 +37,37 @@ createApp({
             }
         };
 
-        const triggerFileInput = () => {
-            if (fileInput.value) {
-                fileInput.value.click();
+        const createProject = async () => {
+            if (!newProjectName.value.trim()) return;
+
+            isLoading.value = true;
+            try {
+                const response = await fetch(`${API_URL}/projects`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newProjectName.value.trim() })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Project creation failed');
+
+                // Refresh list and auto-select the new project ID returned from DB
+                await fetchProjects();
+                selectedProjectId.value = data.project.id; 
+                newProjectName.value = ''; 
+                uploadResult.value = { success: true, message: 'Project created! You can now upload files.' };
+            } catch (error) {
+                uploadResult.value = { success: false, message: error.message };
+            } finally {
+                isLoading.value = false;
             }
+        };
+
+        // --- File Handling Methods ---
+
+        const triggerFileInput = () => {
+            if (fileInput.value) fileInput.value.click();
         };
 
         const handleFileSelect = (event) => {
@@ -70,10 +93,8 @@ createApp({
 
             try {
                 const response = await fetch(`${API_URL}/files`);
-                if (response.status === 401 || response.status === 403) {
-                    // Only reload if we actually expected to be logged in
-                    return;
-                }
+                if (response.status === 401 || response.status === 403) return;
+                
                 const data = await response.json();
                 uploadedFiles.value = data.files || [];
                 if (data.currentUser) currentUser.value = data.currentUser;
@@ -85,23 +106,21 @@ createApp({
         const uploadFile = async () => {
             if (!selectedFile.value) return;
 
-            isLoading.value = true;
-            uploadResult.value = null; // Clear previous result
-
-            // Validation: If "new" is selected, require a name
-            if (selectedProjectId.value === 'new' && !newProjectName.value.trim()) {
-                uploadResult.value = { success: false, message: 'Please enter a name for the new project.' };
+            // Ensure a real project is selected (not "new" or null)
+            if (!selectedProjectId.value || selectedProjectId.value === 'new') {
+                uploadResult.value = { 
+                    success: false, 
+                    message: 'Please select or save a project before beginning the scan.' 
+                };
                 return;
             }
 
+            isLoading.value = true;
+            uploadResult.value = null;
+
             const formData = new FormData();
             formData.append('sequenceFile', selectedFile.value);
-            
-            // Send project info to backend
             formData.append('projectId', selectedProjectId.value);
-            if (selectedProjectId.value === 'new') {
-                formData.append('projectName', newProjectName.value);
-            }
 
             try {
                 const response = await fetch(`${API_URL}/upload`, {
@@ -111,34 +130,20 @@ createApp({
         
                 const data = await response.json();
 
-                if (!response.ok) {
-                    throw new Error(data.error || 'Upload failed');
-                }
+                if (!response.ok) throw new Error(data.error || 'Upload failed');
                 
                 uploadResult.value = { success: true, message: data.message || 'Upload successful!' };
-
-                await loadFileList(); // Refresh file list after upload
+                await loadFileList(); 
             } catch (error) {
-                uploadResult.value = { success: false, message: error.message || 'Upload failed. Please try again.' };
+                uploadResult.value = { success: false, message: error.message || 'Upload failed.' };
             } finally {
                 isLoading.value = false;
-                selectedFile.value = null; // Clear selected file after upload attempt
-                if (fileInput.value) {
-                    fileInput.value.value = ''; // Reset file input
-                }
+                selectedFile.value = null;
+                if (fileInput.value) fileInput.value.value = '';
             }
-                
         };
-        
 
         // --- Auth Methods ---
-
-        const login = () => {
-            localStorage.setItem('isLoggedIn', 'true');
-            isLoggedIn.value = true;
-            // Redirect to the loader page after login
-            window.location.href = 'login.html';
-        };
 
         const logout = () => {
             localStorage.removeItem('isLoggedIn');
@@ -147,8 +152,7 @@ createApp({
         };
 
         onMounted(() => {
-            // Check if we are on a page that has the file list (upload.html)
-            // or just load it anyway, it will exit early if not logged in.
+            fetchProjects();
             loadFileList();
         });
 
@@ -162,7 +166,6 @@ createApp({
             currentUser,
             isDragOver, 
             isLoggedIn, 
-            login, 
             logout,
             fileInput,
             triggerFileInput, 
@@ -171,7 +174,8 @@ createApp({
             uploadFile,
             projects,
             selectedProjectId,
-            newProjectName
+            newProjectName,
+            createProject
         };
     },
 }).mount('#app');
