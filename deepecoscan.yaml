@@ -15,7 +15,7 @@ spec:
       containers:
         - name: deepecoscan-backend
           image: hbastian/deepecoscan-backend:dev
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
@@ -54,7 +54,7 @@ spec:
       containers:
         - name: deepecoscan-frontend
           image: hbastian/deepecoscan-frontend:dev
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
 ---
