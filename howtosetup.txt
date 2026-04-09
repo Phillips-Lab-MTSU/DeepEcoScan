@@ -27,6 +27,10 @@ kubectl rollout restart deployment/deepecoscan-frontend
 kubectl rollout restart deployment/deepecoscan-backend
 kubectl get pods
 ***
+kubectl scale deployment/deepecoscan-frontend --replicas=0
+kubectl scale deployment/deepecoscan-backend --replicas=0
+kubectl scale deployment/deepecoscan-frontend --replicas=1
+kubectl scale deployment/deepecoscan-backend --replicas=1
 
 kubeseal
 install the sealed secrets controller into the cluser

@@ -12,12 +12,18 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const { connectDB } = require("./db");
 const FileRecord = require("./models/File"); 
+const Job = require("./models/Job");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// FAKE USER ID FOR NOW
+const userId = req.headers["x-user-id"];
+// THIS IS THE REAL ONE LATER
+// const userId = req.user._id;
 
 /* ===========================
    DigitalOcean Spaces (S3)
