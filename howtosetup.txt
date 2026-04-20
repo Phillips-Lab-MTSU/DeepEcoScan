@@ -2,8 +2,8 @@
 2 With docker running, create the k3d cluster on an open port
     ex:
         k3d cluster create k3s-default \
-         --port "8081:80@loadbalancer" \
-         --port "8444:443@loadbalancer"
+         --port "8080:80@loadbalancer" \
+         --port "8081:443@loadbalancer"
 3 make sure traefik and crds exists
     kubectl get pods -A | grep -i traefik
     kubectl get crd ingressroutes.traefik.io
