@@ -11,6 +11,8 @@ createApp({
         const isDragOver = ref(false);
         const isLoggedIn = ref(localStorage.getItem('isLoggedIn') === 'true');
         const currentUser = ref(localStorage.getItem('currentUser') || '');
+        // const isLoggedIn = ref(false);
+        // const currentUser = ref('');
         const fileInput = ref(null);
 
         // --- Project State ---
@@ -20,6 +22,48 @@ createApp({
 
 
         const API_URL = 'https://deepeco.local:8081';
+
+        /*
+        const checkAuth = async () => {
+            try {
+                // We call the files endpoint; if it returns 200, we are authenticated
+                const response = await fetch(`${API_URL}/files`);
+                if (response.ok) {
+                    const data = await response.json();
+                    isLoggedIn.value = true;
+                    currentUser.value = data.currentUser;
+                    return true;
+                }
+                isLoggedIn.value = false;
+                return false;
+            } catch (error) {
+                isLoggedIn.value = false;
+                return false;
+            } finally {
+                isLoading.value = false;
+            }
+        };
+
+        const logout = () => {
+            localStorage.removeItem('isLoggedIn'); //will need to remove for traefik
+            isLoggedIn.value = false;
+            window.location.href = 'index.html';
+        };
+
+        onMounted(async () => {
+            const authenticated = await checkAuth();
+            if (authenticated) {
+                // Only fetch data if Traefik confirmed our identity
+                loadFileList();
+                // fetchProjects(); // Uncomment if you have this implemented
+            } else {
+                // If not logged in, Traefik will usually redirect automatically,
+                // but we can handle a fallback here.
+                console.log("Not logged in.");
+            }
+        });
+
+         */
 
         // --- Project Methods ---
 
@@ -181,9 +225,10 @@ createApp({
         };
 
         // --- Auth Methods ---
+        //will need to remove for traefik
 
         const logout = () => {
-            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('isLoggedIn'); 
             isLoggedIn.value = false;
             window.location.href = 'index.html';
         };
@@ -192,7 +237,7 @@ createApp({
             fetchProjects();
             loadFileList();
         });
-
+       
         // --- Return to Template ---
         return {
             title, 

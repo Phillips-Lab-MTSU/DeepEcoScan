@@ -316,6 +316,12 @@ const upload = multer({
 // Upload file -> Spaces blob, Mongo mapping
 app.post("/api/upload", upload.single("sequenceFile"), async (req, res) => {
   try {
+    /*
+    const user = getAuthUser(req);
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    
+    */
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded or invalid file type." });
     }
@@ -352,7 +358,23 @@ app.post("/api/upload", upload.single("sequenceFile"), async (req, res) => {
         }
       }
     }
-
+    
+    /*
+    const doc = await FileRecord.create({
+      owner: user, // <--- Link to Traefik user
+      name: req.file.originalname,
+      originalFilename: req.file.originalname,
+      storedFilename: objectKey,
+      type,
+      blob: {
+        kind: "s3",
+        bucket: DO_SPACES_BUCKET,
+        key: objectKey,
+      },
+      sizeBytes: req.file.size,
+      scan: { status: "uploaded", sequenceCount, sampleHeaders },
+    });
+     */
     const doc = await FileRecord.create({
       name: req.file.originalname,
       originalFilename: req.file.originalname,
@@ -403,6 +425,8 @@ app.post("/api/upload", upload.single("sequenceFile"), async (req, res) => {
 // List files (Mongo mapping only)
 app.get("/api/files", async (req, res) => {
   try {
+    // const user = getAuthUser(req);
+    // if (!user) return res.status(401).json({ error: "Unauthorized" });
     const files = await FileRecord.find({})
       .sort({ createdAt: -1 })
       .select("_id name originalFilename storedFilename sizeBytes createdAt type blob scan");
@@ -417,6 +441,8 @@ app.get("/api/files", async (req, res) => {
 // Download (returns a presigned URL to Spaces)
 app.get("/api/files/:id/download", async (req, res) => {
   try {
+    // const user = getAuthUser(req);
+    // if (!user) return res.status(401).json({ error: "Unauthorized" });
     const doc = await FileRecord.findById(req.params.id).select("blob originalFilename");
     if (!doc) return res.status(404).json({ error: "File not found" });
 
