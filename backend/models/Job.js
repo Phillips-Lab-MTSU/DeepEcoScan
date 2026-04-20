@@ -30,6 +30,8 @@ const embeddingRunSchema = new mongoose.Schema(
 
     createdAt: { type: Date, default: Date.now },
     completedAt: Date,
+    errorMessage: { type: String, default: null },
+    dummy: { type: Boolean, default: false },
   },
   { _id: false }
 );
@@ -40,7 +42,7 @@ const jobSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
     },
 
     fileId: {
@@ -75,7 +77,14 @@ const jobSchema = new mongoose.Schema(
         minSequenceLength: { type: Number, default: 150 },
       },
 
+      
       outputBlob: {
+        kind: { type: String, default: "s3" },
+        bucket: String,
+        key: String,
+      },
+      
+      cleanedFastaBlob: {
         kind: { type: String, default: "s3" },
         bucket: String,
         key: String,
@@ -90,10 +99,14 @@ const jobSchema = new mongoose.Schema(
       scriptVersion: { type: String, default: "v1" },
 
       completedAt: Date,
+      errorMessage: { type: String, default: null },
     },
 
     // --- Embedding Runs (MANY per job) ---
-    embeddingRuns: [embeddingRunSchema],
+        embeddingRuns: [embeddingRunSchema],
+
+        errorMessage: { type: String, default: null },
+        currentRunId: { type: String, default: null },
   },
   {
     timestamps: true, // adds createdAt + updatedAt automatically

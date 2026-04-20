@@ -49,7 +49,7 @@ spec:
             - name: INSECURE_COOKIE
               value: "false"
             - name: SECRET
-              value: "a-random-32-hex-character-string-should-go-here"
+              value: "d0c2c65b0b355023a7129e56c2b6c047560b8442d9a31c4ffd01ecc48bf2887e"
             - name: DEFAULT_PROVIDER
               value: "generic-oauth"
             - name: PROVIDERS_GENERIC_OAUTH_SCOPE
@@ -61,9 +61,9 @@ spec:
             - name: PROVIDERS_GENERIC_OAUTH_USER_URL
               value: "https://jupyterhub.cs.mtsu.edu/phillips-lab/hub/api/user"
             - name: PROVIDERS_GENERIC_OAUTH_CLIENT_ID
-              value: "service-open-webui-oauth2"
+              value: "service-deepecoscan-oauth2"
             - name: PROVIDERS_GENERIC_OAUTH_CLIENT_SECRET
-              value: "a-32-hex-character-client-secret-goes-here-must-match-jupyterhub"
+              value: "76865f31fff1ec756721ca8c4ea19caf78d7b37dedbd9fdd0e7a299"
             - name: URL_PATH
               value: "/_oauth"
 ---
@@ -92,7 +92,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`example.org`)
+    - match: Host(`deepeco.local`)
       kind: Rule
       services:
         - name: service-name

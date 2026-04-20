@@ -19,7 +19,7 @@ createApp({
         const newProjectName = ref(''); 
 
 
-        const API_URL = 'http://deepeco.local:8081';
+        const API_URL = 'https://deepeco.local:8081';
 
         // --- Project Methods ---
 
@@ -27,7 +27,7 @@ createApp({
             if (!isLoggedIn.value) return;
 
             try {
-                const response = await fetch(`${API_URL}/projects`);
+                const response = await fetch(`${API_URL}/api/projects`);
                 if (response.status === 401 || response.status === 403) return;
                 
                 const data = await response.json();
@@ -42,7 +42,7 @@ createApp({
 
             isLoading.value = true;
             try {
-                const response = await fetch(`${API_URL}/projects`, {
+                const response = await fetch(`${API_URL}/api/projects`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: newProjectName.value.trim() })
@@ -92,7 +92,7 @@ createApp({
             if (!isLoggedIn.value) return; 
 
             try {
-                const response = await fetch(`${API_URL}/files`);
+                const response = await fetch(`${API_URL}/api/files`);
                 if (response.status === 401 || response.status === 403) return;
                 
                 const data = await response.json();
@@ -103,27 +103,59 @@ createApp({
             }
         };
 
+        const pollJobStatus = async (jobId) => {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_URL}/api/jobs/${jobId}`);
+                    const data = await response.json();
+
+                    if (!response.ok) throw new Error(data.error || 'Could not fetch job');
+
+                    const job = data.job;
+
+                    if (job.status === 'prep_running') {
+                        uploadResult.value = { success: true, message: 'Running data prep...' };
+                    } else if (job.status === 'prep_done') {
+                        uploadResult.value = { success: true, message: 'Data prep complete. Starting embeddings...' };
+                    } else if (job.status === 'embed_running') {
+                        uploadResult.value = { success: true, message: 'Running dummy embedding job on CPU...' };
+                    } else if (job.status === 'completed') {
+                        uploadResult.value = { success: true, message: 'Pipeline complete.' };
+                        clearInterval(interval);
+                        await loadFileList();
+                    } else if (job.status === 'failed') {
+                        uploadResult.value = { success: false, message: job.errorMessage || 'Pipeline failed.' };
+                        clearInterval(interval);
+                        await loadFileList();
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    uploadResult.value = { success: false, message: error.message || 'Status polling failed.' };
+                }
+            }, 2000);
+        };
+
         const uploadFile = async () => {
             if (!selectedFile.value) return;
 
             // Ensure a real project is selected (not "new" or null)
-            if (!selectedProjectId.value || selectedProjectId.value === 'new') {
-                uploadResult.value = { 
-                    success: false, 
-                    message: 'Please select or save a project before beginning the scan.' 
-                };
-                return;
-            }
+            // if (!selectedProjectId.value || selectedProjectId.value === 'new') {
+            //     uploadResult.value = { 
+            //         success: false, 
+            //         message: 'Please select or save a project before beginning the scan.' 
+            //     };
+            //     return;
+            // }
 
             isLoading.value = true;
             uploadResult.value = null;
 
             const formData = new FormData();
             formData.append('sequenceFile', selectedFile.value);
-            formData.append('projectId', selectedProjectId.value);
+            // formData.append('projectId', selectedProjectId.value);
 
             try {
-                const response = await fetch(`${API_URL}/upload`, {
+                const response = await fetch(`${API_URL}/api/upload`, {
                     method: 'POST',
                     body: formData
                 });
@@ -133,7 +165,12 @@ createApp({
                 if (!response.ok) throw new Error(data.error || 'Upload failed');
                 
                 uploadResult.value = { success: true, message: data.message || 'Upload successful!' };
-                await loadFileList(); 
+
+                if (data.jobId) {
+                    pollJobStatus(data.jobId);
+                } else {
+                    await loadFileList();
+                }
             } catch (error) {
                 uploadResult.value = { success: false, message: error.message || 'Upload failed.' };
             } finally {

@@ -7,5 +7,5 @@ COPY file_upload.html /usr/share/nginx/html/file_upload.html
 COPY about.html  /usr/share/nginx/html/about.html
 COPY login.html  /usr/share/nginx/html/login.html
 COPY style.css   /usr/share/nginx/html/style.css
-COPY backend/app.js /usr/share/nginx/html/app.js
+COPY app.js /usr/share/nginx/html/app.js
 COPY my_projects.html /usr/share/nginx/html/my_projects.html

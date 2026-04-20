@@ -61,7 +61,8 @@
             <div class="project-management">
                 <div class="project-selector">
                     <label for="projectSelect">Project:</label>
-                    <select id="projectSelect" v-model="selectedProjectId" @change="handleProjectChange">
+                    <select id="projectSelect" v-model="selectedProjectId">
+                    <!-- <select id="projectSelect" v-model="selectedProjectId" @change="handleProjectChange"></select> -->
                         <option value="new">Create New Project</option>
                         <option v-for="project in projects" :key="project.id" :value="project.id">
                             {{ project.name }} 
@@ -132,6 +133,7 @@
         </div>
     </div>
 
-    <script src="/backend/app.js"></script>
+    <!-- <script src="/backend/app.js"></script> -->
+    <script src="app.js"></script>
 </body>
 </html>
