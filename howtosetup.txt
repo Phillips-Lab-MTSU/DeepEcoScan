@@ -22,15 +22,16 @@ docker build --no-cache -f Dockerfile.backend -t deepecoscan-backend:dev .
 k3d image import deepecoscan-frontend:dev -c deepeco
 k3d image import deepecoscan-backend:dev -c deepeco
 
-kubectl apply -f deepecoscan.yaml
-kubectl rollout restart deployment/deepecoscan-frontend
-kubectl rollout restart deployment/deepecoscan-backend
-kubectl get pods
-***
 kubectl scale deployment/deepecoscan-frontend --replicas=0
 kubectl scale deployment/deepecoscan-backend --replicas=0
 kubectl scale deployment/deepecoscan-frontend --replicas=1
 kubectl scale deployment/deepecoscan-backend --replicas=1
+
+kubectl apply -f newyaml.yaml
+kubectl rollout restart deployment/deepecoscan-frontend
+kubectl rollout restart deployment/deepecoscan-backend
+kubectl get pods
+***
 
 kubeseal
 install the sealed secrets controller into the cluser
