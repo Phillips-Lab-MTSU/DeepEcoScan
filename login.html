@@ -27,8 +27,9 @@
                     <p>Click below to sign in via the Phillips Lab gateway.</p>
                 </div>
 
-                <button class="login-button primary" @click="startAuth">
-                    Sign in with JupyterHub
+                <!-- FIXED BUTTON -->
+                <button class="login-button primary" @click="login">
+                    Sign in with MTSU
                 </button>
 
                 <div class="footer-links">
@@ -41,12 +42,12 @@
 
     <script>
         const { createApp } = Vue;
+
         createApp({
             methods: {
-                startAuth() {
-                    // Redirecting to a protected path triggers the 
-                    // Traefik Forward Auth middleware flow.
-                    window.location.href = '/index.html';
+                login() {
+                    // This triggers Traefik forward-auth OAuth flow
+                    window.location.href = '/_oauth';
                 }
             }
         }).mount('#app');

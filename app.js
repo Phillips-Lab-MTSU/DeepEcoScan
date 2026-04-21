@@ -9,71 +9,73 @@ createApp({
         const uploadResult = ref(null);
         const uploadedFiles = ref([]);
         const isDragOver = ref(false);
-        const isLoggedIn = ref(localStorage.getItem('isLoggedIn') === 'true');
-        const currentUser = ref(localStorage.getItem('currentUser') || '');
-        // const isLoggedIn = ref(false);
-        // const currentUser = ref('');
+        const isLoggedIn = ref(false);
+        const currentUser = ref('');
         const fileInput = ref(null);
 
         // --- Project State ---
-        const projects = ref([]); 
-        const selectedProjectId = ref(null); 
-        const newProjectName = ref(''); 
+        const projects = ref([]);
+        const selectedProjectId = ref(null);
+        const newProjectName = ref('');
 
-
+        // --- Config ---
         const API_URL = 'https://deepeco.local:8081';
 
-        /*
+        // --- Auth Methods ---
+        const userlogin = () => {
+            window.location.href = '/login.html';
+        };
+
+        const logout = () => {
+            // For now this is a local app logout redirect.
+            // If you later wire a real IdP logout endpoint, replace this.
+            isLoggedIn.value = false;
+            currentUser.value = '';
+            uploadedFiles.value = [];
+            projects.value = [];
+            window.location.href = '/index.html';
+        };
+
         const checkAuth = async () => {
             try {
-                // We call the files endpoint; if it returns 200, we are authenticated
-                const response = await fetch(`${API_URL}/files`);
+                const response = await fetch(`${API_URL}/api/files`, {
+                    credentials: 'include'
+                });
+
                 if (response.ok) {
                     const data = await response.json();
                     isLoggedIn.value = true;
-                    currentUser.value = data.currentUser;
+                    currentUser.value = data.currentUser || '';
+                    uploadedFiles.value = data.files || [];
                     return true;
                 }
+
                 isLoggedIn.value = false;
+                currentUser.value = '';
                 return false;
             } catch (error) {
+                console.error('Auth check failed:', error);
                 isLoggedIn.value = false;
+                currentUser.value = '';
                 return false;
             } finally {
                 isLoading.value = false;
             }
         };
 
-        const logout = () => {
-            localStorage.removeItem('isLoggedIn'); //will need to remove for traefik
-            isLoggedIn.value = false;
-            window.location.href = 'index.html';
-        };
-
-        onMounted(async () => {
-            const authenticated = await checkAuth();
-            if (authenticated) {
-                // Only fetch data if Traefik confirmed our identity
-                loadFileList();
-                // fetchProjects(); // Uncomment if you have this implemented
-            } else {
-                // If not logged in, Traefik will usually redirect automatically,
-                // but we can handle a fallback here.
-                console.log("Not logged in.");
-            }
-        });
-
-         */
-
         // --- Project Methods ---
-
         const fetchProjects = async () => {
             if (!isLoggedIn.value) return;
 
             try {
-                const response = await fetch(`${API_URL}/api/projects`);
-                if (response.status === 401 || response.status === 403) return;
-                
+                const response = await fetch(`${API_URL}/api/projects`, {
+                    credentials: 'include'
+                });
+
+                if (response.status === 401 || response.status === 403 || response.status === 404) {
+                    return;
+                }
+
                 const data = await response.json();
                 projects.value = data.projects || [];
             } catch (error) {
@@ -89,6 +91,7 @@ createApp({
                 const response = await fetch(`${API_URL}/api/projects`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ name: newProjectName.value.trim() })
                 });
 
@@ -96,20 +99,24 @@ createApp({
 
                 if (!response.ok) throw new Error(data.error || 'Project creation failed');
 
-                // Refresh list and auto-select the new project ID returned from DB
                 await fetchProjects();
-                selectedProjectId.value = data.project.id; 
-                newProjectName.value = ''; 
-                uploadResult.value = { success: true, message: 'Project created! You can now upload files.' };
+                selectedProjectId.value = data.project?.id || data.project?._id || null;
+                newProjectName.value = '';
+                uploadResult.value = {
+                    success: true,
+                    message: 'Project created! You can now upload files.'
+                };
             } catch (error) {
-                uploadResult.value = { success: false, message: error.message };
+                uploadResult.value = {
+                    success: false,
+                    message: error.message
+                };
             } finally {
                 isLoading.value = false;
             }
         };
 
         // --- File Handling Methods ---
-
         const triggerFileInput = () => {
             if (fileInput.value) fileInput.value.click();
         };
@@ -118,7 +125,7 @@ createApp({
             const files = event.target.files;
             if (files && files.length > 0) {
                 selectedFile.value = files[0];
-                uploadResult.value = null; 
+                uploadResult.value = null;
             }
         };
 
@@ -127,21 +134,27 @@ createApp({
             const files = event.dataTransfer.files;
             if (files && files.length > 0) {
                 selectedFile.value = files[0];
+                uploadResult.value = null;
             }
         };
 
         // --- API Methods ---
-
         const loadFileList = async () => {
-            if (!isLoggedIn.value) return; 
+            if (!isLoggedIn.value) return;
 
             try {
-                const response = await fetch(`${API_URL}/api/files`);
+                const response = await fetch(`${API_URL}/api/files`, {
+                    credentials: 'include'
+                });
+
                 if (response.status === 401 || response.status === 403) return;
-                
+
                 const data = await response.json();
                 uploadedFiles.value = data.files || [];
-                if (data.currentUser) currentUser.value = data.currentUser;
+
+                if (data.currentUser) {
+                    currentUser.value = data.currentUser;
+                }
             } catch (error) {
                 console.error('Connection Error:', error);
             }
@@ -150,7 +163,10 @@ createApp({
         const pollJobStatus = async (jobId) => {
             const interval = setInterval(async () => {
                 try {
-                    const response = await fetch(`${API_URL}/api/jobs/${jobId}`);
+                    const response = await fetch(`${API_URL}/api/jobs/${jobId}`, {
+                        credentials: 'include'
+                    });
+
                     const data = await response.json();
 
                     if (!response.ok) throw new Error(data.error || 'Could not fetch job');
@@ -158,38 +174,47 @@ createApp({
                     const job = data.job;
 
                     if (job.status === 'prep_running') {
-                        uploadResult.value = { success: true, message: 'Running data prep...' };
+                        uploadResult.value = {
+                            success: true,
+                            message: 'Running data prep...'
+                        };
                     } else if (job.status === 'prep_done') {
-                        uploadResult.value = { success: true, message: 'Data prep complete. Starting embeddings...' };
+                        uploadResult.value = {
+                            success: true,
+                            message: 'Data prep complete. Starting embeddings...'
+                        };
                     } else if (job.status === 'embed_running') {
-                        uploadResult.value = { success: true, message: 'Running dummy embedding job on CPU...' };
+                        uploadResult.value = {
+                            success: true,
+                            message: 'Running dummy embedding job on CPU...'
+                        };
                     } else if (job.status === 'completed') {
-                        uploadResult.value = { success: true, message: 'Pipeline complete.' };
+                        uploadResult.value = {
+                            success: true,
+                            message: 'Pipeline complete.'
+                        };
                         clearInterval(interval);
                         await loadFileList();
                     } else if (job.status === 'failed') {
-                        uploadResult.value = { success: false, message: job.errorMessage || 'Pipeline failed.' };
+                        uploadResult.value = {
+                            success: false,
+                            message: job.errorMessage || 'Pipeline failed.'
+                        };
                         clearInterval(interval);
                         await loadFileList();
                     }
                 } catch (error) {
                     clearInterval(interval);
-                    uploadResult.value = { success: false, message: error.message || 'Status polling failed.' };
+                    uploadResult.value = {
+                        success: false,
+                        message: error.message || 'Status polling failed.'
+                    };
                 }
             }, 2000);
         };
 
         const uploadFile = async () => {
             if (!selectedFile.value) return;
-
-            // Ensure a real project is selected (not "new" or null)
-            // if (!selectedProjectId.value || selectedProjectId.value === 'new') {
-            //     uploadResult.value = { 
-            //         success: false, 
-            //         message: 'Please select or save a project before beginning the scan.' 
-            //     };
-            //     return;
-            // }
 
             isLoading.value = true;
             uploadResult.value = null;
@@ -201,14 +226,18 @@ createApp({
             try {
                 const response = await fetch(`${API_URL}/api/upload`, {
                     method: 'POST',
+                    credentials: 'include',
                     body: formData
                 });
-        
+
                 const data = await response.json();
 
                 if (!response.ok) throw new Error(data.error || 'Upload failed');
-                
-                uploadResult.value = { success: true, message: data.message || 'Upload successful!' };
+
+                uploadResult.value = {
+                    success: true,
+                    message: data.message || 'Upload successful!'
+                };
 
                 if (data.jobId) {
                     pollJobStatus(data.jobId);
@@ -216,7 +245,10 @@ createApp({
                     await loadFileList();
                 }
             } catch (error) {
-                uploadResult.value = { success: false, message: error.message || 'Upload failed.' };
+                uploadResult.value = {
+                    success: false,
+                    message: error.message || 'Upload failed.'
+                };
             } finally {
                 isLoading.value = false;
                 selectedFile.value = null;
@@ -224,34 +256,30 @@ createApp({
             }
         };
 
-        // --- Auth Methods ---
-        //will need to remove for traefik
-
-        const logout = () => {
-            localStorage.removeItem('isLoggedIn'); 
-            isLoggedIn.value = false;
-            window.location.href = 'index.html';
-        };
-
-        onMounted(() => {
-            fetchProjects();
-            loadFileList();
+        // --- Lifecycle ---
+        onMounted(async () => {
+            const authenticated = await checkAuth();
+            if (authenticated) {
+                await fetchProjects();
+            }
         });
-       
+
         // --- Return to Template ---
         return {
-            title, 
-            selectedFile, 
-            isLoading, 
+            title,
+            selectedFile,
+            isLoading,
             uploadResult,
-            uploadedFiles, 
+            uploadedFiles,
             currentUser,
-            isDragOver, 
-            isLoggedIn, 
+            isDragOver,
+            isLoggedIn,
+            userlogin,
+            login,
             logout,
             fileInput,
-            triggerFileInput, 
-            handleFileSelect, 
+            triggerFileInput,
+            handleFileSelect,
             handleDrop,
             uploadFile,
             projects,

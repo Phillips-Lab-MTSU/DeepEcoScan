@@ -359,9 +359,9 @@ app.post("/api/upload", upload.single("sequenceFile"), async (req, res) => {
       }
     }
     
-    /*
+    
     const doc = await FileRecord.create({
-      owner: user, // <--- Link to Traefik user
+      //owner: user, // <--- Link to Traefik user
       name: req.file.originalname,
       originalFilename: req.file.originalname,
       storedFilename: objectKey,
@@ -374,24 +374,24 @@ app.post("/api/upload", upload.single("sequenceFile"), async (req, res) => {
       sizeBytes: req.file.size,
       scan: { status: "uploaded", sequenceCount, sampleHeaders },
     });
-     */
-    const doc = await FileRecord.create({
-      name: req.file.originalname,
-      originalFilename: req.file.originalname,
-      storedFilename: objectKey,
-      type,
-      blob: {
-        kind: "s3",
-        bucket: DO_SPACES_BUCKET,
-        key: objectKey,
-      },
-      sizeBytes: req.file.size,
-      scan: {
-        status: "uploaded",
-        sequenceCount,
-        sampleHeaders,
-      },
-    });
+     
+    // const doc = await FileRecord.create({
+    //   name: req.file.originalname,
+    //   originalFilename: req.file.originalname,
+    //   storedFilename: objectKey,
+    //   type,
+    //   blob: {
+    //     kind: "s3",
+    //     bucket: DO_SPACES_BUCKET,
+    //     key: objectKey,
+    //   },
+    //   sizeBytes: req.file.size,
+    //   scan: {
+    //     status: "uploaded",
+    //     sequenceCount,
+    //     sampleHeaders,
+    //   },
+    // });
 
     const job = await Job.create({
       fileId: doc._id,
