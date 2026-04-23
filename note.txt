@@ -1,4 +1,0 @@
-data submissiong -> data prep -> stored in digital ocean -> embeddings process -> digital ocean -> user
-
-
-set up the embeddings run to be a dummy run on the cpu for the time being
