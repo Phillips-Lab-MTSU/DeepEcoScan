@@ -24,8 +24,10 @@ k3d image import deepecoscan-backend:dev -c deepeco
 
 kubectl scale deployment/deepecoscan-frontend --replicas=0
 kubectl scale deployment/deepecoscan-backend --replicas=0
+kubectl scale deployment/traefik-forward-auth --replicas=0
 kubectl scale deployment/deepecoscan-frontend --replicas=1
 kubectl scale deployment/deepecoscan-backend --replicas=1
+kubectl scale deployment/traefik-forward-auth --replicas=1
 
 kubectl apply -f newyaml.yaml
 kubectl rollout restart deployment/deepecoscan-frontend
