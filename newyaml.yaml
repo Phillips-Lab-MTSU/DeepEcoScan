@@ -174,7 +174,7 @@ spec:
     - match: Host(`deepeco.local`) && PathPrefix(`/api`)
       kind: Rule
       middlewares:
-        - name: strip-forwarded-user
+        # - name: strip-forwarded-user
         - name: traefik-forward-auth
       services:
         - name: deepecoscan-backend-service
@@ -183,7 +183,7 @@ spec:
     - match: Host(`deepeco.local`) && PathPrefix(`/`)
       kind: Rule
       middlewares:
-        - name: strip-forwarded-user
+        # - name: strip-forwarded-user
         - name: traefik-forward-auth
       services:
         - name: deepecoscan-frontend-service

@@ -38,26 +38,9 @@ createApp({
 
         const checkAuth = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/files`, {
-                    credentials: 'include'
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    isLoggedIn.value = true;
-                    currentUser.value = data.currentUser || '';
-                    uploadedFiles.value = data.files || [];
-                    return true;
-                }
-
-                isLoggedIn.value = false;
-                currentUser.value = '';
-                return false;
-            } catch (error) {
-                console.error('Auth check failed:', error);
-                isLoggedIn.value = false;
-                currentUser.value = '';
-                return false;
+                currentUser.value = x-forwarded-user || '';
+                isLoggedIn.value= true;
+                return true;
             } finally {
                 isLoading.value = false;
             }
