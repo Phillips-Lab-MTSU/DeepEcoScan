@@ -22,7 +22,7 @@ createApp({
         const API_URL = 'https://deepeco.local:8081';
 
         // --- Auth Methods ---
-        const userlogin = () => {
+        const login = () => {
             window.location.href = '/login.html';
         };
 
@@ -39,8 +39,9 @@ createApp({
         const checkAuth = async () => {
             try {
                 currentUser.value = x-forwarded-user || '';
-                isLoggedIn.value= true;
-                return true;
+                isLoggedIn.value= x-forwarded-user ? true : false;
+                console.log('Authenticated as:', currentUser.value);
+                return isLoggedIn.value;
             } finally {
                 isLoading.value = false;
             }
@@ -257,7 +258,6 @@ createApp({
             currentUser,
             isDragOver,
             isLoggedIn,
-            userlogin,
             login,
             logout,
             fileInput,
