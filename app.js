@@ -23,7 +23,6 @@ createApp({
 
         // --- Auth Methods ---
         const login = () => {
-        const login = () => {
             window.location.href = '/login.html';
         };
 
@@ -39,12 +38,23 @@ createApp({
 
         const checkAuth = async () => {
             try {
-                currentUser.value = x-forwarded-user || '';
-                isLoggedIn.value= x-forwarded-user ? true : false;
-                console.log('Authenticated as:', currentUser.value);
-                return isLoggedIn.value;
-            } finally {
-                isLoading.value = false;
+                // Use a relative path so it routes through Traefik correctly
+                const response = await fetch('/api/auth/status', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser.value = data.user;
+                    isLoggedIn.value = true;
+                    return true;
+                } else {
+                    isLoggedIn.value = false;
+                    return false;
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                return false;
             }
         };
 
