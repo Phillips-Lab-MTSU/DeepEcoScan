@@ -48,7 +48,23 @@
                 login() {
                     // This triggers Traefik forward-auth OAuth flow
                     window.location.href = '/_oauth';
+                },
+                async checkAuth() {
+                    try {
+                        const response = await fetch('/api/auth/status', {
+                            credentials: 'include'
+                        });
+
+                        if (response.ok) {
+                            window.location.replace('/index.html');
+                        }
+                    } catch (error) {
+                        console.error('Auth check failed on login page:', error);
+                    }
                 }
+            },
+            mounted() {
+                this.checkAuth();
             }
         }).mount('#app');
     </script>

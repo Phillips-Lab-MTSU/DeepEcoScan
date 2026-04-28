@@ -23,6 +23,7 @@ createApp({
 
         // --- Auth Methods ---
         const login = () => {
+        const login = () => {
             window.location.href = '/login.html';
         };
 

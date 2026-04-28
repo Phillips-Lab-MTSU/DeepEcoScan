@@ -26,6 +26,30 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+function getForwardedUser(req) {
+  return req.headers['x-forwarded-user'];
+}
+
+app.get("/api/auth/status", (req, res) => {
+  const user = getForwardedUser(req);
+
+  if (user) {
+    return res.json({ authenticated: true, user });
+  }
+
+  return res.status(401).json({ authenticated: false, error: "Not logged in" });
+});
+
+app.get("/api/me", (req, res) => {
+  const user = getForwardedUser(req);
+
+  if (user) {
+    return res.json({ user });
+  }
+
+  // Keep this for compatibility with older callers.
+  return res.status(401).json({ error: "Not logged in" });
+});
 
 /* ===========================
    DigitalOcean Spaces (S3)
@@ -484,16 +508,20 @@ app.get("/api/jobs/:id", async (req, res) => {
 });
 
 /* ===========================
-   Start Server After DB
+   Start Server
 =========================== */
 
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => {
+async function startServer() {
+  try {
+    await connectDB();
+  } catch (err) {
     console.error("Mongo connection failed:", err.message);
-    process.exit(1);
+    console.warn("Starting API anyway so auth checks and static routes stay available.");
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
   });
+}
+
+startServer();
