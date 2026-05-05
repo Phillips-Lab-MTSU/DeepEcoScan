@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepEcoScan | Home</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="vue.global.js"></script>
+    
+</head>
+<body>
+    <div id="app" v-cloak>
+        <header class="top-nav">
+            <div class="nav-wrapper">
+                <a href="index.html" class="home-button">
+                    <span>DeepEcoScan</span>
+                </a>
+
+                <div class="nav-right-group">
+                    <div class="menu-container">
+                        <button class="menu-button">Menu ▾</button>
+                        <div class="menu-content">
+                            <a href="index.html">Home</a>
+                            <a v-if="isLoggedIn" href="file_upload.html">File Loader</a>
+                            <a href="about.html">About</a>
+                            <a v-if="isLoggedIn" href="my_projects.html">My Projects</a>
+                        </div>
+                    </div>
+
+                    <div class="account-container">
+                        <div v-if="isLoggedIn" class="dropdown">
+                            <button class="login-button">My Account ▾</button>
+                            <div class="dropdown-content">
+                                <p class="user-email">{{ currentUser }}</p>
+                                <a href="#" @click.prevent="logout" class="logout-link">Logout</a>
+                            </div>
+                        </div>
+                        <button v-else class="login-button" @click="login">Login</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="hero">
+            <h1>DeepEcoScan</h1>
+            <p v-if="!isLoggedIn">Welcome to DeepEcoScan. Please login to access the workspace.</p>
+            <p v-else>Welcome back! You are ready to analyze sequences.</p>
+            
+            <div class="features">
+                <div class="feature-card"><h3>Placeholder</h3><p>Something will go here</p></div>
+                <div class="feature-card"><h3>Placeholder</h3><p>Something will go here</p></div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

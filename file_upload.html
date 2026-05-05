@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Loader | DeepEcoScan</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <style>
+        /* Prevents flickering before Vue loads */
+        [v-cloak] { display: none; }
+        .upload-area.dragover { border: 2px solid #4A90E2; background: #f0f7ff; }
+    </style>
+
+    <!-- <script>
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'index.html';
+        }
+    </script> -->
+</head>
+<body>
+    <div id="app" v-cloak>
+        <header class="top-nav">
+            <div class="nav-wrapper">
+                <div class="nav-logo">
+                    <a href="index.html" class="home-button"> 
+                        <span class="logo-text">DeepEcoScan</span>
+                    </a>
+                </div>
+
+                <div class="nav-right-group">
+                    <div class="menu-container">
+                        <button class="menu-button">Menu ▾</button>
+                        <div class="menu-content">
+                            <a href="index.html">Home</a>
+                            <a href="file_upload.html">File Loader</a>
+                            <a href="about.html">About</a>
+                            <a v-if="isLoggedIn" href="my_projects.html">My Projects</a>
+                        </div>
+                    </div>
+
+                    <div class="account-container">
+                        <div v-if="isLoggedIn" class="dropdown">
+                            <button class="login-button">My Account ▾</button>
+                            <div class="dropdown-content">
+                                <p class="user-email">{{ currentUser }}</p>
+                                <a href="#" @click.prevent="logout" class="logout-link">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="container dashboard">
+            <div class="header-content">
+                <h1>Sequence Workspace</h1>
+                <p class="subtitle">Upload FASTA or FASTQ sequence files for analysis</p>
+            </div>
+            <div class="project-management">
+                <div class="project-selector">
+                    <label for="projectSelect">Project:</label>
+                    <select id="projectSelect" v-model="selectedProjectId">
+                    <!-- <select id="projectSelect" v-model="selectedProjectId" @change="handleProjectChange"></select> -->
+                        <option value="new">Create New Project</option>
+                        <option v-for="project in projects" :key="project.id" :value="project.id">
+                            {{ project.name }} 
+                        </option>
+                    </select>
+                </div>
+
+                <div v-if="selectedProjectId === 'new'" class="new-project-input">
+                    <label class = "input-project-label">New Project Name:</label>
+                    <input 
+                        type="text" 
+                        v-model="newProjectName" 
+                        placeholder="Enter New Project Name..."
+                        class="project-input-field"
+                        @keyup.enter="createProject"
+                    >
+                    <button 
+                        class="btnSaveProject"
+                        @click="createProject" :disabled="!newProjectName.trim() || isLoading"
+                    >
+                        {{ isLoading ? 'Saving...' : 'Save Project' }}
+                    </button>
+                </div>
+        </div>
+
+
+
+
+
+            <div class="upload-area" 
+                :class="{ 'dragover': isDragOver }"
+                @click="triggerFileInput"
+                @dragover.prevent="isDragOver = true"
+                @dragleave.prevent="isDragOver = false"
+                @drop.prevent="handleDrop">
+                
+                <div class="upload-icon">📁</div>
+                <p v-if="!selectedFile">Drag and drop your file here or <strong>click to browse</strong></p>
+                <p v-else>Selected: <strong>{{ selectedFile.name }}</strong></p>
+
+                <input 
+                    type="file" 
+                    ref="fileInput" 
+                    @change="handleFileSelect" 
+                    accept=".fasta,.fa,.fna,.fastq,.fq" 
+                    style="display: none;"
+                >
+            </div>
+
+            <div v-if="uploadResult" :class="['message', uploadResult.success ? 'success' : 'error']" style="margin: 10px 0; padding: 10px; border-radius: 4px; text-align: center;">
+                {{ uploadResult.message }}
+            </div>
+
+            <button class="btn-scan" @click="uploadFile" :disabled="!selectedFile || isLoading">
+                {{ isLoading ? 'Analyzing...' : 'Begin Scan' }}
+            </button>
+
+            <div class="file-list" v-if="uploadedFiles.length > 0">
+                <h3>Your Recent Scans</h3>
+                <div class="file-item" v-for="file in uploadedFiles" :key="file">
+                    <div><strong>{{ file.name }}</strong></div>
+                    <div>Type: {{ file.type }}</div>
+                    <div>Size: {{ file.sizeBytes }} bytes</div>
+                    <div>Status: {{ file.scan?.status || 'uploaded' }}</div>
+                    <div v-if="file.scan">Sequences: {{ file.scan.sequenceCount || 0 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <script src="/backend/app.js"></script> -->
+    <script src="app.js"></script>
+</body>
+</html>

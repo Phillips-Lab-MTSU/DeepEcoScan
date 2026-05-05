@@ -1,0 +1,11 @@
+FROM nginx:alpine
+
+# Static pages + css at repo root
+COPY vue.global.js /usr/share/nginx/html/vue.global.js
+COPY index.html  /usr/share/nginx/html/index.html
+COPY file_upload.html /usr/share/nginx/html/file_upload.html
+COPY about.html  /usr/share/nginx/html/about.html
+COPY login.html  /usr/share/nginx/html/login.html
+COPY style.css   /usr/share/nginx/html/style.css
+COPY app.js /usr/share/nginx/html/app.js
+COPY my_projects.html /usr/share/nginx/html/my_projects.html

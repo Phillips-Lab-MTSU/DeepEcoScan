@@ -1,0 +1,73 @@
+1 install docker desktop, kubectl, k3d
+2 With docker running, create the k3d cluster on an open port
+    ex:
+        k3d cluster create k3s-default \
+         --port "8088:80@loadbalancer" \
+         --port "8081:443@loadbalancer"
+3 make sure traefik and crds exists
+    kubectl get pods -A | grep -i traefik
+    kubectl get crd ingressroutes.traefik.io
+4 Navigate to your project folder -- build and import the frontend image locally
+    docker build --no-cache -f Dockerfile.frontend -t deepecoscan-frontend:dev .
+    k3d image import deepecoscan-frontend:dev -c k3s-default
+    kubectl apply -f deepecoscan.yaml
+    kubectl rollout restart deployment/deepecoscan-frontend
+5   open localhost.whateverportyouhaveiton/
+
+
+***
+docker build --no-cache -f Dockerfile.frontend -t deepecoscan-frontend:dev .
+docker build --no-cache -f Dockerfile.backend -t deepecoscan-backend:dev .
+
+k3d image import deepecoscan-frontend:dev -c deepeco
+k3d image import deepecoscan-backend:dev -c deepeco
+kubectl apply -f newyaml.yaml
+kubectl rollout restart deployment/deepecoscan-frontend
+kubectl rollout restart deployment/deepecoscan-backend
+kubectl get pods
+
+
+kubectl scale deployment/deepecoscan-frontend --replicas=0
+kubectl scale deployment/deepecoscan-backend --replicas=0
+kubectl scale deployment/traefik-forward-auth --replicas=0
+kubectl scale deployment/deepecoscan-frontend --replicas=1
+kubectl scale deployment/deepecoscan-backend --replicas=1
+kubectl scale deployment/traefik-forward-auth --replicas=1
+
+***
+
+kubeseal
+install the sealed secrets controller into the cluser
+kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml
+
+install kubeseal
+(for mac w/ homebrew) 
+brew install kubeseal
+    confirm with 'kubeseal --version'
+
+set up a plaintext secret yaml with kubectl, just fill in the following command with your relevant
+information first and send it in terminal
+
+*** THIS FILE IS NOT TO BE COMMITED, AFTER GENERATING THE SEALED SECRET SCRUB THE YAML FILE ***
+*** Any password that has special characters must be URL-encoded first ***
+
+kubectl create secret generic deepecoscan-secrets \
+  --from-literal=MONGO_URI='mongodb+srv://USER:ENCODED_PASS@CLUSTER/deepecoscan?retryWrites=true&w=majority&appName=DeepEcoScan' \
+  --from-literal=DO_SPACES_ENDPOINT='https://nyc3.digitaloceanspaces.com' \
+  --from-literal=DO_SPACES_BUCKET='deepecoscan-data' \
+  --from-literal=DO_SPACES_KEY='YOUR_KEY' \
+  --from-literal=DO_SPACES_SECRET='YOUR_SECRET' \
+  --from-literal=DO_SPACES_REGION='us-east-1' \
+  --dry-run=client -o yaml > deepecoscan-secrets.yaml
+
+then seal the yaml
+kubeseal --format yaml \
+  --namespace default \
+  --name deepecoscan-secrets \
+  < deepecoscan-secrets.yaml > deepecoscan-sealedsecret.yaml
+
+Apply the sealed secret
+kubectl apply -f deepecoscan-sealedsecret.yaml
+
+finally remove the local unsealed secrets yaml
+rm deepecoscan-secrets.yaml

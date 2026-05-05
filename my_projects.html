@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepEcoScan | Projects</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <header class="top-nav">
+            <div class="nav-wrapper">
+                <a href="index.html" class="home-button">
+                    <span>DeepEcoScan</span>
+                </a>
+
+                <div class="nav-right-group">
+                    <div class="menu-container">
+                        <button class="menu-button">Menu ▾</button>
+                        <div class="menu-content">
+                            <a href="index.html">Home</a>
+                            <a v-if="isLoggedIn" href="file_upload.html">File Loader</a>
+                            <a href="about.html">About</a>
+                            <a v-if="isLoggedIn" href="my_projects.html">My Projects</a>
+                        </div>
+                    </div>
+
+                    <div class="account-container">
+                        <div v-if="isLoggedIn" class="dropdown">
+                            <button class="login-button">My Account ▾</button>
+                            <div class="dropdown-content">
+                                <p class="user-email">researcher@eco-scan.org</p>
+                                <a href="#" @click="logout" class="logout-link">Logout</a>
+                            </div>
+                        </div>
+                        <button v-else class="login-button" @click="login">Login</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </div>
+    <p class="coming-soon" style="text-align: center;">Projects page coming soon!</p>
+
+    <script src="app.js"></script>
+</body>
+</html>

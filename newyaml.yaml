@@ -1,0 +1,225 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-forwarded-user
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-User: ""
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-forward-auth
+spec:
+  forwardAuth:
+    address: http://traefik-forward-auth.default.svc.cluster.local:4181
+    authResponseHeaders:
+      - X-Forwarded-User
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik-forward-auth
+  labels:
+    app: traefik-forward-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik-forward-auth
+  template:
+    metadata:
+      labels:
+        app: traefik-forward-auth
+    spec:
+      containers:
+        - name: traefik-forward-auth
+          image: jlphillips/traefik-forward-auth:phillips-lab
+          ports:
+            - containerPort: 4181
+          env:
+            - name: LOG_LEVEL
+              value: debug
+            - name: INSECURE_COOKIE
+              value: "false"
+            - name: DEFAULT_PROVIDER
+              value: "generic-oauth"
+            - name: PROVIDERS_GENERIC_OAUTH_SCOPE
+              value: "identify"
+            - name: PROVIDERS_GENERIC_OAUTH_AUTH_URL
+              value: "https://jupyterhub.cs.mtsu.edu/phillips-lab/hub/api/oauth2/authorize"
+            - name: PROVIDERS_GENERIC_OAUTH_TOKEN_URL
+              value: "https://jupyterhub.cs.mtsu.edu/phillips-lab/hub/api/oauth2/token"
+            - name: PROVIDERS_GENERIC_OAUTH_USER_URL
+              value: "https://jupyterhub.cs.mtsu.edu/phillips-lab/hub/api/user"
+            - name: PROVIDERS_GENERIC_OAUTH_CLIENT_ID
+              value: "service-deepecoscan-oauth2"
+            - name: URL_PATH
+              value: "/_oauth"
+            - name: SECRET
+              valueFrom:  
+                secretKeyRef:
+                  name: traefik-forward-auth-secrets
+                  key: SECRET
+            - name: PROVIDERS_GENERIC_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: traefik-forward-auth-secrets
+                  key: PROVIDERS_GENERIC_OAUTH_CLIENT_SECRET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-forward-auth
+  labels:
+    app: traefik-forward-auth
+spec:
+  type: ClusterIP
+  selector:
+    app: traefik-forward-auth
+  ports:
+    - name: auth-http
+      port: 4181
+      targetPort: 4181
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepecoscan-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepecoscan-backend
+  template:
+    metadata:
+      labels:
+        app: deepecoscan-backend
+    spec:
+      containers:
+        - name: deepecoscan-backend
+          image: deepecoscan-backend:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+          envFrom:
+            - secretRef:
+                name: deepecoscan-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepecoscan-backend-service
+spec:
+  selector:
+    app: deepecoscan-backend
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepecoscan-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepecoscan-frontend
+  template:
+    metadata:
+      labels:
+        app: deepecoscan-frontend
+    spec:
+      containers:
+        - name: deepecoscan-frontend
+          image: deepecoscan-frontend:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepecoscan-frontend-service
+spec:
+  selector:
+    app: deepecoscan-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: deepecoscan
+spec:
+  entryPoints:
+    - websecure
+  tls: {}
+  routes:
+    - match: Host(`deepeco.local`) && PathPrefix(`/_oauth`)
+      kind: Rule
+      services:
+        - name: traefik-forward-auth
+          port: 4181
+
+    - match: Host(`deepeco.local`) && PathPrefix(`/api`)
+      kind: Rule
+      middlewares:
+        # - name: strip-forwarded-user
+        - name: traefik-forward-auth
+      services:
+        - name: deepecoscan-backend-service
+          port: 3000
+
+    - match: Host(`deepeco.local`) && PathPrefix(`/`)
+      kind: Rule
+      middlewares:
+        # - name: strip-forwarded-user
+        - name: traefik-forward-auth
+      services:
+        - name: deepecoscan-frontend-service
+          port: 80
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: deepecoscan-secrets
+  namespace: default
+spec:
+  encryptedData:
+    DO_SPACES_BUCKET: AgAvnP6FrmTyX92GQdMx1ZGgeHcr/1Xaf6yhz4HqiL8WvAEGNp/fqb8TPnJN1RUbeYPnFga6YQ/ybABpuBJvKGkFFO20rqufNlTyi/LDU4tKRSP80+i+4gm0aFhKOrefGvM4mnIUeLyl8pchwqGame7D13GrfBScW0xRy5ZOyOYigSOwMvnwvlgn8BpKSNsHswv3P0cjB0XcEAS47w2Hma0eo+2ZivtPbpjm0EJaobV+O2zVRL7aimg13cxxtn6zmMxlG7+464cWNgyxEbOfMIlm9eVDg1upKNj7j3lVRj9IjJlUiUsRfeNThT5MXmzv6BNXm7rmhpqW+inrEyJZWfQ1XDaCFREvAp8P+VuF75vp/HCOucKP+bPcD3ddsN5h5Gd/1vVGxflXqP4a7P9DFp0apqZsCItsHtkRPy2QjiyripzCntYApMTDe9g8Ens1hQ1FAmDWdqLcL2cHnhviKMlbMXAGwCnOmfxYG25ElWPdsWWFVEAqoZmN0Miehw01RmdM+RLSE++owyQCZg61yg045oyNbUnVAmMoFRJEwr9bH2DdaCTE/Reg2Pwef1iNo6daN2ByKcDj3kuwYPvYRw7pALpXmBeKznJkSqltIypZW2mdEFZ47quofdjlZigze4yGWZ4Lau83XiwuZmybDNh2SMuXRaDnzLj8uVHfjpTcAlIRQVlCAiid2MiG0vRY53o5n4QjQzhAC6aqnQ==
+    DO_SPACES_ENDPOINT: AgAQQb8TPPYF7UKuP/29X1xtnaMPdr/XuqRV38ckKXfC/4Fb1yoMomQv461Ll/YNuTT6SJ6AgOKn2wahubCZKRFwi5oJHturwM4smtH08IV1OpAXjL2M8eqwqOyW6A9lynb6NSpXqjKtufGGFNhRiPGkc9eXllHM9cTt74S43UQTtQdWWnJHCYGe6fwv1Z7310lR0I0Yituq7ncZBjeuJ6O1kxNBWWhoUKAywZC/Qekat8rycHalXDTHg17TO3UXH/fNtK5H0cbbGEV4QmruZCqjJ3zAxnoxGSNXrl6PA9U7FxBNfdu/tNaEbk9L4L+zc3MmLSX/G3jG+kVEMuSPBZjWB0b536/PL6tz6OG8s0PminWMXDWCIvryTHGnbWYHVRvyWFLwl+/acY7+DBX41bddhvacwNn9Q75XNSbduFJov0Smq4OFvGWTMerOhUV3fCvLMJEzjBVa9nRfXMHxFQmOLV+PEhspwL5uIrPsCYxaI97zHRHqX4pPFBsJ97G2L6CN//163A5pgAoFVeEMQmE0zEW59IkEkvmERJ+zifH6NuD8l4ftRj8K6VpEoR/XZAfv+MLB2+250Hm7UJvWLHA+dqNa84YUgqlc1YNnWYnbu7TysAL4UR/YE2wz+v0yc4odyrrQAZYiajX7DCcKOyid0CQUHO9ycSkVp4JSWL/+3bmSrDuDSJGMFw+yf7kk4etDlIj/hnAD26l+idN/icNxCJpzCkhq5y7/CPSoZifSm5S+4A==
+    DO_SPACES_KEY: AgAYeAY7iTmC9s313WVY+u+US153JwzIi+5ZWOLw4hVW88/VDNrDSqSHZyblX5n50SsB9e2FMwIrtMyLvgE5upPZ0p7SeioDj+3xw0jslne5UvRRlJ/d/x3dcCJGtpJ8BDvaILubbvQu24ePAYK691mLRq2dEDzSq2Ysv/+xDN0661w7jxDfdvjgLy8AT811Sw97LhZGX5yLC7igplTq6DXxer4zp507Lh6k+QnUEiMwqZLheZk/1+Arv4f2OQzRNNdyarRrtntKhm/VnqIdPBQ4nnej5+/RW4gXvoezhUmVOn/mXWIZJMjDY28E6BMogocoFVd69oqT+7n0d25Ryjtfv/YEA/y0QW9mzPwV0MN1WNQiQFHvZ172rPbYcRpGzwcxwEyP8rSOPd+io2vmuXVMvfk+J4Em5JtkEwadiliT3ZTtiu3rGG+MsGfkmdcEqrsSsGJACaLOKVTnJop/NuGavXwCJi0PzKdi1cB6rj5U24sLeCCbDPyRpiqmVqdAYUezzx49bSHn8Ik9alwIPVUT1Z37Ttlb9WGhUQulh8iE/y1r3jMOAciizDNvIkqbc6Y45QPR8dx7rVbboZx2jwLSUixrmtNQOs/4Ou2bJ6T0CHHzNST2TB1Yw441crb7inY/6lzFa77xFZFDc+oMqY14gJtSyM3T1sYNNX6uYyS3v0zKPQKaNq9HgwJnGL8Q0lQ9RuYI6x1euzw8Lgz2s0dQzI3MbA==
+    DO_SPACES_REGION: AgBqXdZ4rymtJoEV03hjXiY2fCZUMvghh1QgWaNIIWNGaNRMCPfcXPVsFhNyOWC/UTWg+tEmK9frM4elr/odmJKC5AiotCuN3uUOQd65QRn3jNXIAihZbkWpGBhYcgAqs8F4DaSxOvPYte6mk644b+yn5MHok93cRi277e3Jsxm4k0jfyPMfssZMIteBRKVamZjZNkNyHVqfRLdsncbR/G133R2X5l+30XvXT2QpmqAHX/kEyqpy+8fOT6jqvzGZog/heBGLzjsTZgTxEyicA5KB1hsHibSpgmH7YgmnS8bvGLoE9XE6dbZBYglC2PLZwOl/czSauiMKFkKW19K4rK4Jgb2LFaRZvoEOY9RoznGT2UXcgIjev5wGnixEpGXv7GSqaInkHL2FvCC47QyrKEb3mmNfoocv+jqDZ55aT2/bgYWwXoO53CFr1c2k03b7Uk33UwMn8611MB0jqan3XQy+MMGB/9iMuc+VnbiVSv3TTXEQwCjFkpwS2MTAkLaHXnaUdLndVeYAoCn6QZ5yDUMUdCfhHMXY77eQQ7oOf9OMGyOFDuBIuAddDWJ9SxHlu0f2alazWi8+mKs8a1LOyfUKi446hnNhL70AS7kvwBMEkQ4QPP8NhIJytxVIhL/W9tR1jg6MNC1GaZExC50b23Oz4XcqZWITggF290KNthrSj0fqbHwUxb1zOiRfiuR5Ns+uB2IFNd0FDbk=
+    DO_SPACES_SECRET: AgA7YQ+sr8X7fMGqR6sGqSsPIFVMXRp4jhN8D+WVbfyAs+LIuCpL7m1hOwSBVVMA33nukXtNrdsttx+S+wwVMw2HY1bEnsPbK/X4zSCrWn55BBsnrlZT4fh/G0dEGqlaGW38tSj0ldAMTOEWoG1nuf5NtfJUMYzbM7c/v4WsqGHzIdE1h4/ib0oPExZNGj1H63xcAsof59GZ1vC1oSwmpTZjtOMOfDAaN8evh2mesCgmzSC+um9G3nylDQf8V/JlJQvqgO+cx5xtByOk+J+RgyZZbXdJxS3e2kTLTnTUds2FP3RlOU44T1fO2dpmh63owYinzwjh96YkBss8JVaPxQmbftLIyIxe/I4BfnbYVUkVW7Xch0EmIeP5TjswxTxkb4rfsoeaAF1bQNFj3q0eAY7vYNb0FGYVktVsdd1w2u7/WGeM/orjxnvpvsgm3zhgRd0XPiwPoqXjFUzzUtsqWfvvg6Ok5od0t5cTjTTEgA4/aQwM+OIqb1h7CmCkyKWMGjLTAhBawPTYrhkFNlH+ZXgjE2F4gyTJgYxMb/hWu3byK3NVJeWV+lWktaYJXV9lMkT0gnN7IFevrytppdeiQ5bzSwCFVsdV072Ec0FJsmAI0F1Kpkbhn0ib4fuotjzNNEgjAg2HMl0g5GZC2S4APTBqYbWz5FBEJ8xVfTI4mhfF9KBpVhLU1VYf34K0Av935bxAoAnUTqWELKuFGY8hh7IfpuoVxqj/s8B2/flQeS4QukN2PLbUGgni+xPU
+    MONGO_URI: AgBRkM3++f6+8mr+DZigyWjb9OgMjNM+D9bHk2+dlSm4TSPI5RREJS2wKAtgcFl8XEuOaplPKmFo5kxSV4EYI571d6E23oBFa3PlgPlfq2IbfKj0LGBp+f8l/WjP7/QbX8ZB5QLJv2nw89CjOfvHUCETXRjNJTeDEAlJzkeW0mu1bAu94QIEcYuz6Fb7K0btXXtN5sVrm6IOdvwtNkL7NdZ1b/Dq/H96NNfjUR73S9BAvgUmG2e2pncSktDtcxeebDY1TtHx/5G24J/NWHtfawTzA+z5BkfZxHXw2DTyMI7DonBgSEVWZvr+CCFz2UYDyEo/X0I7sQreGoy3ypM0gMLLiapxetYxg72lKY/SN2P+/5Sr0mzxnlEPX1zHFdbyDiGKa1heJ5NFmhb6sezbH1wsSFcNh+Tol/0Kbl0qKdk1wGWIjsoxk9/OXxMMYd+js/6YrJxpxrMRAtIjSrrf1Q8utFB2qI4yA6xwPMZ8dmGy6HAulgdz4VzlHH0NMhx+OiHJmZpu5t0MfOkkpmPP4+wNS4lrwfugDlLXmfvPUQrcLkq82qglIEO+O65aVH4a8e+siYTspXtf44HzeMbpKZBHdVRvqCEMamDJv+NHTFNaUXAJgHcOQCO8st9cuaCq7eZlpKAOrwh0nXcIQLBs0G1F2vHG9MQzciCCExZT44rf8k0QTXPQzOR+mUZbu4RYYw/KjneWW3mUX+TcT2dE+h2JtnB2kFjkEDqM3BTrp5RgahbVCuFZJ//l1dWvU6YkmRwSFUzQSMR+TEMakmeVG5NIW9P2c2f4k2LbQZfyosk1d5KP7iivsnfFo6ikcx0C5fZrDsWzUwFOPt2HBywHEA39yvAQ6opTyzG5gnvsd6uppxw=
+  template:
+    metadata:
+      name: deepecoscan-secrets
+      namespace: default
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: traefik-forward-auth-secrets
+  namespace: default
+spec:
+  encryptedData:
+    PROVIDERS_GENERIC_OAUTH_CLIENT_SECRET: AgAMs6m+U/UgpOJdhfcTig+q5q5eSotPR3II/NKIOFhIca0z3gEdb6QBzXCO0yORCjLpl5vFjS7Tmalq6X//zdxvHaOCRklXYVSjYg+71zI+7GwcS/nG+6+zpKiQrshoBqysi74aawIgmWc0702LbtFGrDIKwP5dY06mPHCSb3O4bh1VArKgMomD4qjpmipgZkg28PgeLlYdPmOrpLz7SM7uLJvPG1J3C++S2VY01MnzHfdEUHNzlOWcTCXai1kSp/fih3A6bP9x4rssXoaVJXDeOrrbgERIG4EmrjY2th6maJYGLjLApFaacqgeVqqEIWljTuctKGsgmAvbEOXjH27G1IscYl3qKH74UJ29QYeKobkODbqNg8yljmIAXepqOFVnFDshq8Z1CFwQRT/a+LoXloVmWePR37EJJ4J+ekwdda+dd0RIO8Qi1VjsTr2/E1h4ugWRst623ui6cYCNLsHgDPMvwkeTatF9YhgaOzeyJY6AJzoYlKMRuiancFVBow5/Ndowvr17fKBn4J+uj7Z/gLUm0V8EVhPnBAOE+RTDWzedSmlblBxZg3wVuGqyhYUspsl47SCFQLejpP72jlQL5ZjX3YjLOsUIX74PR0U9grmmkSki2cdAG+evSydHiVy8eQkMzKbPfXbq8b90ONjF22dGgKG/0y19rmxtHiSXnN9VV/XVgyMnwuvHttAD8TIewGlnyehM7znMhGP52Lga/aaX1CK767b5fW40m3cEJWqW2rRJXzSkSzOWcQqVFOkpnHOsM3Q3B0w8yJuYN9wz
+    SECRET: AgA85OGGdgs6VsG3Xa7svDQsUueGAouAjEzBKo0xL4R4Eg8ojMxg7eJC6qRbmGwvJJzK9nlS68f5d1JVFlMZy7iRzJpYEM29af/gdvF+2QnCWTUMFinmO88Lj4CbnAz2zSc0OUaqasJZawxKBkEQMmuAlPmCxwrxikapZSOH1avw+Ks1J3u1Ag/JOI6dpcWT2fIzEsqv1ecwbLHSAQFo3dQQbnQ6rDj1ALgA8lVbCx/oLxU3COhGo6xmlLptyz/F2kzgBhx0TJPVjINane/hct5GT5BKzv1ephrsVr/+NRYzGy7+uCfxi6ZsdJPFe7aBtVK6kPTCP33OF1QejIEIsSVl1jaHojftRIa3JFcGsoxcB0aRBWDnv/np4Rq08qYAecf/IeL6oW/63xWBONBehUw4MnYTC0TsevLmqQvfyfOuHUV79DI5D84OMe/ymCj9JV9IV9hWCItNWL1TQS0u8EJ6fnKGOtFGXIPG3rixRbryWf7JTOGzeqJRCk6Ky5TEC7DGw89ywl5hBYX02tM7ijktI1DL2za7+cOnUHkhG6QLxlM+pQ13jpdZJamqV5Xa53VT58VI4IyhE1wnI+Eb10QKwMq2MwDy7hW7Rc+wFv90ljRl7dUD265v1k9L0VjpoNAEKsrPl+4xMZgoBKj9YnOE0/iG94mvH6KRgkVoI6IJpzTT6Hb9pDP3NN55P/s268GJpn/BJaU4F1rie1v4tlty2cI/hduPSpNvt2LLnmXhsoe/5U1Zw3/bpkAdvRtfdXotFPIBr55i5NK6FIlhA19k
+  template:
+    metadata:
+      name: traefik-forward-auth-secrets
+      namespace: default
+
+
+
