@@ -29,8 +29,10 @@ kubectl get pods
 
 kubectl scale deployment/deepecoscan-frontend --replicas=0
 kubectl scale deployment/deepecoscan-backend --replicas=0
+kubectl scale deployment/traefik-forward-auth --replicas=0
 kubectl scale deployment/deepecoscan-frontend --replicas=1
 kubectl scale deployment/deepecoscan-backend --replicas=1
+kubectl scale deployment/traefik-forward-auth --replicas=1
 
 ***
 

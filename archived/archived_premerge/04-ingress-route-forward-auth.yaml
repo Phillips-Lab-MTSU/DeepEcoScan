@@ -1,0 +1,36 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-forward-auth
+spec:
+  forwardAuth:
+    # Note that the namespace must match the namespace where traefik-forward-auth is deployed
+    address: http://traefik-forward-auth.namespace.svc.cluster.local:4181
+    authResponseHeaders:
+      - X-Forwarded-User
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-header
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-User: ""
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: app-ingress
+spec:
+  entryPoints: # We listen to requests coming from ports 80 and 443
+    - websecure
+  routes:
+    - match: Host(`example.org`)
+      kind: Rule
+      services:
+        - name: service-name # Requests will be forwarded to this service
+          port: 80
+      middlewares:
+        - name: traefik-forward-auth
